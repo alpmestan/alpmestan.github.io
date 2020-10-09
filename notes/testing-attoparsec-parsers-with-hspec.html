@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="alp">
+    <meta name="generator" content="hakyll">
+    <meta name="description" content="Alp's notes">
+    <link rel="canonical" href="https://alpmestan.github.io/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing attoparsec parsers with hspec - Alp's notes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css">
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      
+      <div class="columns">
+	<div class="column toc is-one-fifth">
+	  <p><a href="../">Index</a></p>
+	  <p><a href="../notes/testing-attoparsec-parsers-with-hspec.html">Testing attoparsec parsers with hspec</a></p>
+	  <ul>
+<li><a href="#getting-our-feet-wet-with-attoparsec">Getting our feet wet with attoparsec</a></li>
+<li><a href="#introducing-hspec-attoparsec">Introducing <code>hspec-attoparsec</code></a></li>
+<li><a href="#documentation">Documentation</a></li>
+</ul>
+	</div>
+	<div class="column">
+          <div class="columns">
+  <div class="column">
+    <h1 class="title">Testing attoparsec parsers with hspec</h1>
+  </div>
+  <div class="column is-one-fifth posted" style="color: #aaa">Posted on June 18, 2014</div>
+</div>
+<div class="article"><p>Almost all haskellers end up, some day, having to write a parser. But then, that’s not really a problem because writing parsers in Haskell isn’t really annoying, like it tends to be elsewhere. Of special interest to us is <a href="http://hackage.haskell.org/package/attoparsec">attoparsec</a>, a <strong>very fast</strong> parser combinator library. It lets you combine small, simple parsers to express how data should be extracted from that specific format you’re working with.</p>
+<section id="getting-our-feet-wet-with-attoparsec" class="level1">
+<h1>Getting our feet wet with attoparsec</h1>
+<p>For example, suppose you want to parse something of the form <code>|&lt;any char&gt;|</code> where <code>&lt;any char&gt;</code> can be… well, any character. We obviously only care about that precise character sitting there – once the input is processed, we don’t really care about these <code>|</code> anymore. This is a no-brainer with attoparsec.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Parser</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Attoparsec.Text</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="ot">weirdParser ::</span> <span class="dt">Parser</span> <span class="dt">Char</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>weirdParser <span class="ot">=</span> <span class="kw">do</span> <span class="co">-- attoparsec's Parser type has a useful monad instance</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>  char <span class="ch">'|'</span>       <span class="co">-- matches just '|', fails on any other char</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>  c <span class="ot">&lt;-</span> anyChar   <span class="co">-- matches any character and returns it</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>  char <span class="ch">'|'</span>       <span class="co">-- matches just '|', like on the first line</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>  <span class="fu">return</span> c       <span class="co">-- return the inner character we parsed</span></span></code></pre></div>
+<p>Here we go, we have our parser. If you’re a bit lost with these combinators, feel free to switch back and forth between this article and the documentation of <a href="http://hackage.haskell.org/package/attoparsec-0.12.1.0/docs/Data-Attoparsec-Text.html">Data.Attoparsec.Text</a>.</p>
+<p>This parser will fail if any of the 3 smaller parsers I’m using fail. If there’s more input than just what we’re interested in, the additional content will be left unconsumed.</p>
+<p>Let’s now see our parser in action, by loading it in ghci and trying to feed it various inputs.</p>
+<p>First, we want to be able to type in <a href="http://hackage.haskell.org/package/text"><code>Text</code></a> values directly without using conversions functions from/to <code>String</code>s. For that reason, we enable the <code>OverloadedStrings</code> extension. We also import <code>Data.Attoparsec.Text</code> because in addition to containing <code>char</code> and <code>anyChar</code> it also contains the functions that let us run a parser on some input (<em>make sure attoparsec is installed</em>).</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> <span class="op">:</span>set <span class="op">-</span><span class="dt">XOverloadedStrings</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>λ<span class="op">&gt;</span> <span class="kw">import</span> <span class="dt">Data.Attoparsec.Text</span></span></code></pre></div>
+<p><code>Data.Attoparsec.Text</code> contains a <code>parse</code> function, which takes a parser and some input, and yields a <code>Result</code>. A <code>Result</code> will just let us know whether the parser failed, with some diagnostic information, or if it was on its way to successfully parsing a value but didn’t get enough input (imagine we just feed <code>"|x"</code> to our parser: it won’t fail, because it looks almost exactly like what we want to parse, except that it doesn’t have that terminal <code>'|'</code>, so attoparsec will just tell us it needs more input to complete – or fail), or, finally, if everything went smoothly and it actually hands back to us a successfully parser <code>Char</code> in our case, along with some possibly unconsumed input.</p>
+<p>Why do we care about this? Because when we’ll test our parsers with <code>hspec-attoparsec</code>, we’ll be able to test the kind of <code>Result</code> our parsers leaves us with, among other things.</p>
+<p>Back to concrete things, let’s run our parser on a valid input.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> parse weirdParser <span class="st">&quot;|x|&quot;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="dt">Done</span> <span class="st">&quot;&quot;</span> <span class="ch">'x'</span></span></code></pre></div>
+<p>That means it successfully parsed our inner <code>'x'</code> between two <code>'|'</code>s. What if we have more input than necessary for the parser?</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> parse weirdParser <span class="st">&quot;|x|hello world&quot;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a><span class="dt">Done</span> <span class="st">&quot;hello world&quot;</span> <span class="ch">'x'</span></span></code></pre></div>
+<p>Interesting! It successfully parsed our <code>'x'</code> and also tells us <code>"hello world"</code> was left unconsumed, because the parser didn’t need to go that far in the input string to extract the information we want.</p>
+<p>But, if the input looks right but lets the parser halfway through completing, what happens?</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> parse weirdParser <span class="st">&quot;|x&quot;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="dt">Partial</span> _ </span></code></pre></div>
+<p>Here, the input is missing the final <code>|</code> that would make the parser succeed. So we’re told that the parser has <em>partially</em> succeeded, meaning that with that input, it’s been running successfully but hasn’t yet parsed everything it’s supposed to. What that <code>Partial</code> holds isn’t an just underscore but a function to resume the parsing with some more input (a continuation). The <code>Show</code> instance for parsers just writes a <code>_</code> in place of functions.</p>
+<p>Ok, and now, how about we feed some “wrong data” to our parser?</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> parse weirdParser <span class="st">&quot;bbq&quot;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="dt">Fail</span> <span class="st">&quot;bbq&quot;</span> [<span class="st">&quot;'|'&quot;</span>] <span class="st">&quot;Failed reading: satisfy&quot;</span></span></code></pre></div>
+<p>Alright! Equipped with this minimal knowledge of attoparsec, we’ll now see how we can test our parser.</p>
+</section>
+<section id="introducing-hspec-attoparsec" class="level1">
+<h1>Introducing <code>hspec-attoparsec</code></h1>
+<p>Well, I happen to be working on an HTML parsing library based on <em>attoparsec</em>, and I’ve been using <a href="http://hspec.github.io/">hspec</a> for all my testing needs these past few months – working with the author surely helped, hello <a href="http://github.com/sol">Simon</a>! – so I wanted to check whether I could come up with a minimalist API for testing attoparsec parsers.</p>
+<p>If you don’t know how to use hspec, I warmly recommend visititing <a href="http://hspec.github.io/">hspec.github.io</a>, it is well documented.</p>
+<p>So let’s first get the boilerplate out of our way.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">ParserSpec</span> <span class="kw">where</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a><span class="co">-- we import Text, this will be our input type</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Data.Text</span> (<span class="dt">Text</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a><span class="co">-- we import hspec, to run the test suite</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Test.Hspec</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true"></a><span class="co">-- we import 'hspec-attoparsec'</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Test.Hspec.Attoparsec</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true"></a><span class="co">-- we import the module where our parser is defined</span></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Parser</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true"></a></span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true"></a>main <span class="ot">=</span> hspec spec</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true"></a><span class="ot">spec ::</span> <span class="dt">Spec</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true"></a>spec <span class="ot">=</span> <span class="fu">return</span> () <span class="co">-- this is temporary, we'll write our tests here</span></span></code></pre></div>
+<p>And sure enough, we can already get this running in ghci (ignore the warnings, they are just saying that we’re not yet using our parser or <code>hspec-attoparsec</code>), although it’s quite useless:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> <span class="op">:</span>l example<span class="op">/</span>Parser.hs example<span class="op">/</span>ParserSpec.hs</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>[<span class="dv">1</span> <span class="kw">of</span> <span class="dv">2</span>] <span class="dt">Compiling</span> <span class="dt">Parser</span>           ( example<span class="op">/</span>Parser.hs, interpreted )</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>[<span class="dv">2</span> <span class="kw">of</span> <span class="dv">2</span>] <span class="dt">Compiling</span> <span class="dt">ParserSpec</span>       ( example<span class="op">/</span>ParserSpec.hs, interpreted )</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>example<span class="op">/</span>ParserSpec.hs<span class="op">:</span><span class="dv">8</span><span class="op">:</span><span class="dv">1</span><span class="op">:</span> <span class="dt">Warning</span><span class="op">:</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>    <span class="dt">The</span> <span class="kw">import</span> of ‘<span class="dt">Test.Hspec.Attoparsec</span>’ is redundant</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true"></a>      except perhaps to <span class="kw">import</span> instances from ‘<span class="dt">Test.Hspec.Attoparsec</span>’</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true"></a>    <span class="dt">To</span> <span class="kw">import</span> instances alone, use: import <span class="dt">Test.Hspec.Attoparsec</span>()</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true"></a>example<span class="op">/</span>ParserSpec.hs<span class="op">:</span><span class="dv">10</span><span class="op">:</span><span class="dv">1</span><span class="op">:</span> <span class="dt">Warning</span><span class="op">:</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true"></a>    <span class="dt">The</span> <span class="kw">import</span> of ‘<span class="dt">Parser</span>’ is redundant</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true"></a>      except perhaps to <span class="kw">import</span> instances from ‘<span class="dt">Parser</span>’</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true"></a>    <span class="dt">To</span> <span class="kw">import</span> instances alone, use: import <span class="dt">Parser</span>()</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true"></a><span class="dt">Ok</span>, modules loaded<span class="op">:</span> <span class="dt">Parser</span>, <span class="dt">ParserSpec</span><span class="op">.</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true"></a>λ<span class="op">&gt;</span> ParserSpec.main</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true"></a><span class="dt">Finished</span> <span class="kw">in</span> <span class="fl">0.0001</span> seconds</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true"></a><span class="dv">0</span> examples, <span class="dv">0</span> failures</span></code></pre></div>
+<p>Alright, let’s first introduce a couple of tests where our parser should succeed.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">spec ::</span> <span class="dt">Spec</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>spec <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a>  describe <span class="st">&quot;weird parser - success cases&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses |a| into 'a'&quot;</span> <span class="op">$</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>      (<span class="st">&quot;|a|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>        <span class="ot">`shouldParse`</span> <span class="ch">'a'</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses |3| into '3'&quot;</span> <span class="op">$</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>      (<span class="st">&quot;|3|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>        <span class="ot">`shouldParse`</span> <span class="ch">'3'</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses ||| into '|'&quot;</span> <span class="op">$</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true"></a>      (<span class="st">&quot;|||&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true"></a>        <span class="ot">`shouldParse`</span> <span class="ch">'|'</span></span></code></pre></div>
+<p>We’re using two things from <code>hspec-attoparsec</code>:</p>
+<ul>
+<li><code>(~&gt;)</code>, which connects some input to a parser and extracts either an error string or an actual value, depending on how the parsing went.</li>
+<li><code>shouldParse</code>, which takes the result of <code>(~&gt;)</code> and compares it to what you expect the value to be. If the parsing fails, the test won’t pass, obviously, and <code>hspec-attoparsec</code> will report that the parsing failed. If the parsing succeeds, the parsed value is compared to the expected one and a proper error message is reported with both values printed out.</li>
+</ul>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true"></a><span class="ot">(~&gt;) ::</span> <span class="dt">Source</span> parser string string' result </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true"></a>     <span class="ot">=&gt;</span> string           <span class="co">-- ^ the input</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true"></a>     <span class="ot">-&gt;</span> parser string' a <span class="co">-- ^ the parser to run</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true"></a>     <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> a  <span class="co">-- ^ either an error or a parsed value</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true"></a><span class="ot">shouldParse ::</span> (<span class="dt">Eq</span> a, <span class="dt">Show</span> a) </span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true"></a>            <span class="ot">=&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> a <span class="co">-- ^ result of a call to ~&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true"></a>            <span class="ot">-&gt;</span> a               <span class="co">-- ^ expected value</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true"></a>            <span class="ot">-&gt;</span> <span class="dt">Expectation</span>     <span class="co">-- ^ resulting hspec &quot;expectation&quot;</span></span></code></pre></div>
+<p>Running them gives:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> ParserSpec.main</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true"></a>weird parser <span class="op">-</span> success cases</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span>a<span class="op">|</span> into <span class="ch">'a'</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span><span class="dv">3</span><span class="op">|</span> into <span class="ch">'3'</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|||</span> into <span class="ch">'|'</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true"></a></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true"></a><span class="dt">Finished</span> <span class="kw">in</span> <span class="fl">0.0306</span> seconds</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true"></a><span class="dv">3</span> examples, <span class="dv">0</span> failures</span></code></pre></div>
+<p>If we modify our first test case by expecting <code>'b'</code> instead of <code>'a'</code>, while still having <code>"|a|"</code> as input, we get:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> ParserSpec.main</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true"></a>weird parser <span class="op">-</span> success cases</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span>a<span class="op">|</span> into <span class="ch">'b'</span> <span class="dt">FAILED</span> [<span class="dv">1</span>]</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span><span class="dv">3</span><span class="op">|</span> into <span class="ch">'3'</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|||</span> into <span class="ch">'|'</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true"></a>  <span class="op">-</span> successfully parses a digit character from <span class="op">|</span><span class="dv">3</span><span class="op">|</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true"></a><span class="dv">1</span>) weird parser <span class="op">-</span> success cases successfully parses <span class="op">|</span>a<span class="op">|</span> into <span class="ch">'b'</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true"></a>  expected<span class="op">:</span> <span class="ch">'b'</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true"></a>  but got<span class="op">:</span> <span class="ch">'a'</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true"></a><span class="dt">Randomized</span> with seed <span class="dv">1330009810</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true"></a></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true"></a><span class="dt">Finished</span> <span class="kw">in</span> <span class="fl">0.0267</span> seconds</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true"></a><span class="dv">4</span> examples, <span class="dv">1</span> failure</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true"></a><span class="op">***</span> <span class="dt">Exception</span><span class="op">:</span> <span class="dt">ExitFailure</span> <span class="dv">1</span></span></code></pre></div>
+<p>Nice! But what else can we test? Well, we can test that what we parse satisfies some predicate, for example. Let’s add the following to <code>spec</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true"></a><span class="co">-- you have to add: import Data.Char (isDigit)</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true"></a><span class="co">-- in the import list</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses a digit character from |3|&quot;</span> <span class="op">$</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true"></a>      (<span class="st">&quot;|3|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true"></a>        <span class="ot">`parseSatisfies`</span> <span class="fu">isDigit</span></span></code></pre></div>
+<p>where</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true"></a><span class="ot">parseSatisfies ::</span> <span class="dt">Show</span> a </span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true"></a>               <span class="ot">=&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> a <span class="co">-- ^ result of ~&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true"></a>               <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> <span class="dt">Bool</span>)     <span class="co">-- ^ predicate the parsed value should satisfy</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true"></a>               <span class="ot">-&gt;</span> <span class="dt">Expectation</span>     <span class="co">-- ^ resulting hspec expectation</span></span></code></pre></div>
+<p>And we get:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> ParserSpec.main</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true"></a></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true"></a>weird parser <span class="op">-</span> success cases</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span>a<span class="op">|</span> into <span class="ch">'a'</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span><span class="dv">3</span><span class="op">|</span> into <span class="ch">'3'</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|||</span> into <span class="ch">'|'</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true"></a>  <span class="op">-</span> successfully parses a digit character from <span class="op">|</span><span class="dv">3</span><span class="op">|</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true"></a></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true"></a><span class="dt">Finished</span> <span class="kw">in</span> <span class="fl">0.0012</span> seconds</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true"></a><span class="dv">4</span> examples, <span class="dv">0</span> failures</span></code></pre></div>
+<p>Great, what else can we do? Well, sometimes we don’t really care about the concrete values produced, we just want to test that the parser succeeds or fails on some precise inputs we have, because that’s how it’s supposed to behave and we want to have a way that changes in the future won’t affect the parser’s behavior on these inputs. This is what <code>shouldFailOn</code> and <code>shouldSucceedOn</code> are for. Let’s add a couple more tests:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true"></a><span class="ot">spec ::</span> <span class="dt">Spec</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true"></a>spec <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true"></a>  describe <span class="st">&quot;weird parser - success cases&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses |a| into 'a'&quot;</span> <span class="op">$</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true"></a>      (<span class="st">&quot;|a|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true"></a>        <span class="ot">`shouldParse`</span> <span class="ch">'a'</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true"></a></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses |3| into '3'&quot;</span> <span class="op">$</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true"></a>      (<span class="st">&quot;|3|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true"></a>        <span class="ot">`shouldParse`</span> <span class="ch">'3'</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses ||| into '|'&quot;</span> <span class="op">$</span></span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true"></a>      (<span class="st">&quot;|||&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true"></a>        <span class="ot">`shouldParse`</span> <span class="ch">'|'</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true"></a></span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses a digit character from |3|&quot;</span> <span class="op">$</span></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true"></a>      (<span class="st">&quot;|3|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~&gt;</span> weirdParser</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true"></a>        <span class="ot">`parseSatisfies`</span> <span class="fu">isDigit</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true"></a>    <span class="co">-- NEW</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true"></a>    it <span class="st">&quot;successfully parses |\160|&quot;</span> <span class="op">$</span> </span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true"></a>      weirdParser <span class="ot">`shouldSucceedOn`</span> (<span class="st">&quot;|\160|&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>)</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true"></a>  <span class="co">-- NEW</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true"></a>  describe <span class="st">&quot;weird parser - failing cases&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true"></a></span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true"></a>    it <span class="st">&quot;fails to parse |x-&quot;</span> <span class="op">$</span></span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true"></a>      weirdParser <span class="ot">`shouldFailOn`</span> (<span class="st">&quot;|x-&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>)</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true"></a></span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true"></a>    it <span class="st">&quot;fails to parse ||/&quot;</span> <span class="op">$</span></span>
+<span id="cb16-32"><a href="#cb16-32" aria-hidden="true"></a>      weirdParser <span class="ot">`shouldFailOn`</span> (<span class="st">&quot;||/&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>)</span></code></pre></div>
+<p>where</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true"></a><span class="ot">shouldSucceedOn ::</span> (<span class="dt">Source</span> p s s' r, <span class="dt">Show</span> a) </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true"></a>                <span class="ot">=&gt;</span> p s' a  <span class="co">-- ^ parser to run</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true"></a>                <span class="ot">-&gt;</span> s       <span class="co">-- ^ input string</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true"></a>                <span class="ot">-&gt;</span> <span class="dt">Expectation</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true"></a></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true"></a><span class="ot">shouldFailOn ::</span> (<span class="dt">Source</span> p s s' r, <span class="dt">Show</span> a) </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true"></a>             <span class="ot">=&gt;</span> p s' a  <span class="co">-- ^ parser to run</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true"></a>             <span class="ot">-&gt;</span> s       <span class="co">-- ^ input string</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true"></a>             <span class="ot">-&gt;</span> <span class="dt">Expectation</span></span></code></pre></div>
+<p>And we run our new tests:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true"></a>λ<span class="op">&gt;</span> <span class="op">:</span>l example<span class="op">/</span>Parser.hs example<span class="op">/</span>ParserSpec.hs</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true"></a>[<span class="dv">1</span> <span class="kw">of</span> <span class="dv">2</span>] <span class="dt">Compiling</span> <span class="dt">Parser</span>           ( example<span class="op">/</span>Parser.hs, interpreted )</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true"></a>[<span class="dv">2</span> <span class="kw">of</span> <span class="dv">2</span>] <span class="dt">Compiling</span> <span class="dt">ParserSpec</span>       ( example<span class="op">/</span>ParserSpec.hs, interpreted )</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true"></a><span class="dt">Ok</span>, modules loaded<span class="op">:</span> <span class="dt">Parser</span>, <span class="dt">ParserSpec</span><span class="op">.</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true"></a>λ<span class="op">&gt;</span> ParserSpec.main</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true"></a>weird parser <span class="op">-</span> success cases</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span>a<span class="op">|</span> into <span class="ch">'a'</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span><span class="dv">3</span><span class="op">|</span> into <span class="ch">'3'</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|||</span> into <span class="ch">'|'</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true"></a>  <span class="op">-</span> successfully parses a digit character from <span class="op">|</span><span class="dv">3</span><span class="op">|</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true"></a>  <span class="op">-</span> successfully parses <span class="op">|</span> <span class="op">|</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true"></a></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true"></a>weird parser <span class="op">-</span> failing cases</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true"></a>  <span class="op">-</span> fails to parse <span class="op">|</span>x<span class="op">-</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true"></a>  <span class="op">-</span> fails to parse <span class="op">||/</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true"></a></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true"></a><span class="dt">Finished</span> <span class="kw">in</span> <span class="fl">0.0015</span> seconds</span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true"></a><span class="dv">7</span> examples, <span class="dv">0</span> failures</span></code></pre></div>
+<p>I think by now you probably understand how to use the library, so I’ll just show the last useful function: <code>leavesUnconsumed</code>. This one will just let you inspect the unconsumed part of the input if there’s any. Using it, you can easily describe how eager in consuming the input your parsers should be.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true"></a>  describe <span class="st">&quot;weird parser - leftovers&quot;</span> <span class="op">$</span> </span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true"></a>    it <span class="st">&quot;leaves \&quot;fooo\&quot; unconsumed in |a|fooo&quot;</span> <span class="op">$</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true"></a>      (<span class="st">&quot;|a|fooo&quot;</span><span class="ot"> ::</span> <span class="dt">Text</span>) <span class="op">~?&gt;</span> weirdParser</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true"></a>        <span class="ot">`leavesUnconsumed`</span> <span class="st">&quot;fooo&quot;</span></span></code></pre></div>
+<p>Right now, <code>hspec-attoparsec</code> will only consider leftovers when the parser succeeds. I’m not really sure whether we should return <code>Fail</code>’s unconsumed input or not.</p>
+</section>
+<section id="documentation" class="level1">
+<h1>Documentation</h1>
+<p>The code lives at <a href="http://github.com/alpmestan/hspec-attoparsec">github.com/alpmestan/hspec-attoparsec</a>, the package is on hackage <a href="http://hackage.haskell.org/package/hspec-attoparsec">here</a> where you can also view the documentation. A good source of examples is the package’s own test suite, that you can view <a href="https://github.com/alpmestan/hspec-attoparsec/blob/master/tests/Test/Hspec/AttoparsecSpec.hs">in the repo</a>. The example used in this article also lives in the repo, see <a href="https://github.com/alpmestan/hspec-attoparsec/tree/master/example">example/</a>. Let me know through github or by email about any question, feedback, PR, etc.</p>
+</section></div>
+
+	</div>
+      </div>
+      <div class="content has-text-centered">
+	<p>Powered by <a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+	  - <a href="../rss.xml">RSS feed</a>
+	  - <a href="../servant/">servant paper</a>
+	</p>
+      </div>
+      
+      <p></p>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="alp">
+    <meta name="generator" content="hakyll">
+    <meta name="description" content="Alp's notes">
+    <link rel="canonical" href="https://alpmestan.github.io/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A simple GLFW-b example - Alp's notes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css">
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      
+      <div class="columns">
+	<div class="column toc is-one-fifth">
+	  <p><a href="../">Index</a></p>
+	  <p><a href="../notes/a-simple-glfw-b-example.html">A simple GLFW-b example</a></p>
+	  
+	</div>
+	<div class="column">
+          <div class="columns">
+  <div class="column">
+    <h1 class="title">A simple GLFW-b example</h1>
+  </div>
+  <div class="column is-one-fifth posted" style="color: #aaa">Posted on July 17, 2013</div>
+</div>
+<div class="article"><p>There are some really clever and productive people on the <a href="irc://irc.freenode.net/haskell-game">#haskell-game</a> IRC channel. Among them is <a href="https://github.com/bsl">Brian Lewis</a>, who maintains a binding to the <a href="http://www.glfw.org">GLFW</a> library, which lets you create windows with OpenGL contexts in them and manage inputs and events. His binding is called <a href="http://hackage.haskell.org/package/GLFW-b">GLFW-b</a> and is just a <code>cabal install</code> away from you.</p>
+<p>Recently, Brian updated his package to match GLFW 3.0, so I thought it could be a good opportunity to see how it felt to use his package. I decided to port <a href="http://www.glfw.org/docs/3.0/quick.html#quick_example">the official “quick example”</a> in Haskell using GLFW-b, and here’s the reulting code. I tried to keep the same spirit as in the original code, just introducing some utility functions to make that code smoother to read.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Control.Monad</span> (unless, when)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">Graphics.Rendering.OpenGL</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Graphics.UI.GLFW</span> <span class="kw">as</span> <span class="dt">G</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.Exit</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a><span class="kw">import</span> <span class="dt">System.IO</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a><span class="co">-- tiny utility functions, in the same spirit as 'maybe' or 'either'</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="co">-- makes the code a wee bit easier to read</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="ot">bool ::</span> <span class="dt">Bool</span> <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>bool b falseRes trueRes <span class="ot">=</span> <span class="kw">if</span> b <span class="kw">then</span> trueRes <span class="kw">else</span> falseRes</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a><span class="ot">unless' ::</span> <span class="dt">Monad</span> m <span class="ot">=&gt;</span> m <span class="dt">Bool</span> <span class="ot">-&gt;</span> m () <span class="ot">-&gt;</span> m ()</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a>unless' action falseAction <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a>    b <span class="ot">&lt;-</span> action</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>    unless b falseAction</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a><span class="ot">maybe' ::</span> <span class="dt">Maybe</span> a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> (a <span class="ot">-&gt;</span> b) <span class="ot">-&gt;</span> b</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>maybe' m nothingRes f <span class="ot">=</span> <span class="kw">case</span> m <span class="kw">of</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a>    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> nothingRes</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>    <span class="dt">Just</span> x  <span class="ot">-&gt;</span> f x</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>    </span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a><span class="co">-- type ErrorCallback = Error -&gt; String -&gt; IO ()</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true"></a><span class="ot">errorCallback ::</span> <span class="dt">G.ErrorCallback</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true"></a>errorCallback err description <span class="ot">=</span> hPutStrLn stderr description</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true"></a><span class="ot">keyCallback ::</span> <span class="dt">G.KeyCallback</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true"></a>keyCallback window key scancode action mods <span class="ot">=</span> when (key <span class="op">==</span> <span class="dt">G.Key'Escape</span> <span class="op">&amp;&amp;</span> action <span class="op">==</span> <span class="dt">G.KeyState'Pressed</span>) <span class="op">$</span></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true"></a>  G.setWindowShouldClose window <span class="dt">True</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true"></a>main <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true"></a>  G.setErrorCallback (<span class="dt">Just</span> errorCallback)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true"></a>  successfulInit <span class="ot">&lt;-</span> G.init</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true"></a>  <span class="co">-- if init failed, we exit the program</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true"></a>  bool successfulInit exitFailure <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true"></a>      mw <span class="ot">&lt;-</span> G.createWindow <span class="dv">640</span> <span class="dv">480</span> <span class="st">&quot;Simple example, haskell style&quot;</span> <span class="dt">Nothing</span> <span class="dt">Nothing</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true"></a>      maybe' mw (G.terminate <span class="op">&gt;&gt;</span> exitFailure) <span class="op">$</span> \window <span class="ot">-&gt;</span> <span class="kw">do</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true"></a>          G.makeContextCurrent mw</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true"></a>          G.setKeyCallback window (<span class="dt">Just</span> keyCallback)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true"></a>          mainLoop window</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true"></a>          G.destroyWindow window</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true"></a>          G.terminate</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true"></a>          exitSuccess</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true"></a>          </span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true"></a><span class="ot">mainLoop ::</span> <span class="dt">G.Window</span> <span class="ot">-&gt;</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true"></a>mainLoop w <span class="ot">=</span> unless' (G.windowShouldClose w) <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true"></a>    (width, height) <span class="ot">&lt;-</span> G.getFramebufferSize w</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true"></a>    <span class="kw">let</span> ratio <span class="ot">=</span> <span class="fu">fromIntegral</span> width <span class="op">/</span> <span class="fu">fromIntegral</span> height</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true"></a>    </span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true"></a>    viewport <span class="op">$=</span> (<span class="dt">Position</span> <span class="dv">0</span> <span class="dv">0</span>, <span class="dt">Size</span> (<span class="fu">fromIntegral</span> width) (<span class="fu">fromIntegral</span> height))</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true"></a>    clear [<span class="dt">ColorBuffer</span>]</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true"></a>    </span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true"></a>    matrixMode <span class="op">$=</span> <span class="dt">Projection</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true"></a>    loadIdentity</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true"></a>    ortho (<span class="fu">negate</span> ratio) ratio (<span class="fu">negate</span> <span class="fl">1.0</span>) <span class="fl">1.0</span> <span class="fl">1.0</span> (<span class="fu">negate</span> <span class="fl">1.0</span>)</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true"></a>    matrixMode <span class="op">$=</span> <span class="dt">Modelview</span> <span class="dv">0</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true"></a>    </span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true"></a>    loadIdentity</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true"></a>    <span class="co">-- this is bad, but keeps the logic of the original example I guess</span></span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true"></a>    <span class="dt">Just</span> t <span class="ot">&lt;-</span> G.getTime</span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true"></a>    rotate ((<span class="fu">realToFrac</span> t) <span class="op">*</span> <span class="dv">50</span>) <span class="op">$</span> (<span class="dt">Vector3</span> <span class="dv">0</span> <span class="dv">0</span> <span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Vector3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true"></a>    </span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true"></a>    renderPrimitive <span class="dt">Triangles</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true"></a>        color  (<span class="dt">Color3</span> <span class="dv">1</span> <span class="dv">0</span> <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Color3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true"></a>        vertex (<span class="dt">Vertex3</span> (<span class="fu">negate</span> <span class="fl">0.6</span>) (<span class="fu">negate</span> <span class="fl">0.4</span>) <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Vertex3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true"></a>        color  (<span class="dt">Color3</span> <span class="dv">0</span> <span class="dv">1</span> <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Color3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true"></a>        vertex (<span class="dt">Vertex3</span> <span class="fl">0.6</span> (<span class="fu">negate</span> <span class="fl">0.4</span>) <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Vertex3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true"></a>        color  (<span class="dt">Color3</span> <span class="dv">0</span> <span class="dv">0</span> <span class="dv">1</span><span class="ot"> ::</span> <span class="dt">Color3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true"></a>        vertex (<span class="dt">Vertex3</span> <span class="dv">0</span> <span class="fl">0.6</span> <span class="dv">0</span><span class="ot"> ::</span> <span class="dt">Vertex3</span> <span class="dt">GLdouble</span>)</span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true"></a>        </span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true"></a>    G.swapBuffers w</span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true"></a>    G.pollEvents</span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true"></a>    mainLoop w</span></code></pre></div>
+<p>The code <a href="https://github.com/alpmestan/glfw-b-quick-example">sits in a github repo</a> for your viewing/forking pleasure.</p></div>
+
+	</div>
+      </div>
+      <div class="content has-text-centered">
+	<p>Powered by <a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+	  - <a href="../rss.xml">RSS feed</a>
+	  - <a href="../servant/">servant paper</a>
+	</p>
+      </div>
+      
+      <p></p>
+    </div>
+  </body>
+</html>

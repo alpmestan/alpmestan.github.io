@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="alp">
+    <meta name="generator" content="hakyll">
+    <meta name="description" content="Alp's notes">
+    <link rel="canonical" href="https://alpmestan.github.io/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick and minimal Haskell hacking with Nix - Alp's notes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css">
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      
+      <div class="columns">
+	<div class="column toc is-one-fifth">
+	  <p><a href="../">Index</a></p>
+	  <p><a href="../notes/quick-haskell-hacking-with-nix.html">Quick and minimal Haskell hacking with Nix</a></p>
+	  
+	</div>
+	<div class="column">
+          <div class="columns">
+  <div class="column">
+    <h1 class="title">Quick and minimal Haskell hacking with Nix</h1>
+  </div>
+  <div class="column is-one-fifth posted" style="color: #aaa">Posted on September  6, 2017</div>
+</div>
+<div class="article"><p>This post will not explain in detail how <a href="https://nixos.org/nix/">Nix</a> can build haskell projects or set up development environments, but simply show one workflow that I use a lot. Please refer to <a href="https://nixos.org/nixpkgs/manual/#users-guide-to-the-haskell-infrastructure">this manual</a>, <a href="https://github.com/Gabriel439/haskell-nix#nix-and-haskell-in-production">Gabriel Gonzalez’s guide</a> and various blog posts out there to find out more about Nix and Haskell.</p>
+<p>Alright, so I often end up wanting to quickly experiment with some ideas in a ghci session or a standalone Haskell module. Sometimes I can get away by simply prototyping my idea with data types and functions from base, but sometimes (most of the time, really) I want (or need) to use other libraries. I’d like to have a magic command to which I would give a ghc version and a list of haskell packages, and I would end up with an environment with ghc/ghci and all the aforementionned packages pre-installed in that ghc’s package database, so that just running <code>ghci</code> would be enough for being able to use those packages. Similarly, standalone modules could be built just with <code>ghc --make</code> for example. No need for a cabal file, cabal-install or stack.</p>
+<p>Well, this is possible with Nix. The <code>nix-shell</code> program allows us to enter some environment that possibly requires downloading, building and running several things. The precise provisioning process depends a lot on what the environment consists in. It turns out that the Haskell infrastructure in Nix provides some functions out of the box for describing environments that consist in a ghc install along with some Haskell packages from Hackage. Making use of them is as simple as:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a>$ <span class="ex">nix-shell</span> -p <span class="st">&quot;haskell.packages.ghc821.ghcWithPackages (pkgs: [pkgs.aeson pkgs.dlist])&quot;</span></span></code></pre></div>
+<p>This enters a shell with GHC 8.2.1 with aeson and dlist (and their transitive dependencies) installed in its package database. You might even fetch all those things from a binary cache with a little bit of luck!</p>
+<p>The text between double quotes is a function call, in the Nix programming language. It calls a function, <code>haskell.packages.ghc821.ghcWithPackages</code> (<code>.</code> here is simply field/attribute access, like in many OO languages), provided by the standard Haskell infrastructure in <code>nixpkgs</code>, with an argument that’s itself a function: <code>pkgs: [pkgs.aeson pkgs.dlist]</code> is equivalent to (pseudo Haskell code) <code>\pkgs -&gt; [aeson pkgs, dlist pkgs]</code> where <code>aeson</code> and <code>dlist</code> would be fields of a big record containing all Haskell packages. So this <code>ghcWithPackages</code> function lets us provision a ghc package database using a package set that it is providing us with, <code>pkgs</code>.</p>
+<p><em>Note</em>: a haskell package set in nix is basically any record that provides the packages you need, where packages must be declared under a very precise shape. The one we’re using here (<code>haskell.packages.ghc821</code>) is derived from the latest stackage LTS (9.x) but we could very well be calling <code>thebestpackageset.ghcWithPackages</code> instead, provided that we define <code>thebestpackageset</code> somewhere and that its definition is valid. For example, you could simply extend the latest LTS with a few packages of yours that nix should get from github, by simply using the record extension syntax of Nix. Or you could override just a few package versions from the LTS. Or you could even put together an entire package set yourself.</p>
+<p>In that new shell, you can verify that you indeed get the GHC you asked for and that you can use the said packages:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>[<span class="ex">nix-shell</span>:~]$ ghc --version</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="ex">The</span> Glorious Glasgow Haskell Compilation System, version 8.2.1</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>[<span class="ex">nix-shell</span>:~]$ ghc-pkg list</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="ex">/nix/store/wrrw9c2dsw3d4vmfck7dfx3br33c6pd1-ghc-8.2.1-with-packages/lib/ghc-8.2.1/package.conf.d</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>    <span class="ex">Cabal-2.0.0.2</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>    <span class="ex">aeson-1.1.2.0</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>    <span class="ex">array-0.5.2.0</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    <span class="ex">attoparsec-0.13.1.0</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>    <span class="ex">base-4.10.0.0</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    <span class="ex">base-compat-0.9.3</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>    <span class="ex">binary-0.8.5.1</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>    <span class="ex">bytestring-0.10.8.2</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a>    <span class="ex">containers-0.5.10.2</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a>    <span class="ex">deepseq-1.4.3.0</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a>    <span class="ex">directory-1.3.0.2</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a>    <span class="ex">dlist-0.8.0.3</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a>    <span class="ex">filepath-1.4.1.2</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a>    <span class="ex">ghc-8.2.1</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>    <span class="ex">ghc-boot-8.2.1</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a>    <span class="ex">ghc-boot-th-8.2.1</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a>    <span class="ex">ghc-compact-0.1.0.0</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a>    <span class="ex">ghc-prim-0.5.1.0</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a>    <span class="ex">ghci-8.2.1</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a>    <span class="ex">hashable-1.2.6.1</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a>    <span class="ex">haskeline-0.7.4.0</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true"></a>    <span class="ex">hoopl-3.10.2.2</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true"></a>    <span class="ex">hpc-0.6.0.3</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true"></a>    <span class="ex">integer-gmp-1.0.1.0</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true"></a>    <span class="ex">integer-logarithms-1.0.2</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true"></a>    <span class="ex">old-locale-1.0.0.7</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true"></a>    <span class="ex">pretty-1.1.3.3</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true"></a>    <span class="ex">primitive-0.6.2.0</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true"></a>    <span class="ex">process-1.6.1.0</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true"></a>    <span class="ex">random-1.1</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true"></a>    <span class="ex">rts-1.0</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true"></a>    <span class="ex">scientific-0.3.5.1</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true"></a>    <span class="ex">tagged-0.8.5</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true"></a>    <span class="ex">template-haskell-2.12.0.0</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true"></a>    <span class="ex">terminfo-0.4.1.0</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true"></a>    <span class="ex">text-1.2.2.2</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true"></a>    <span class="ex">time-1.8.0.2</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true"></a>    <span class="ex">time-locale-compat-0.1.1.3</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true"></a>    <span class="ex">transformers-0.5.2.0</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true"></a>    <span class="ex">transformers-compat-0.5.1.4</span></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true"></a>    <span class="ex">unix-2.7.2.2</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true"></a>    <span class="ex">unordered-containers-0.2.8.0</span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true"></a>    <span class="ex">uuid-types-1.0.3</span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true"></a>    <span class="ex">vector-0.12.0.1</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true"></a>    <span class="ex">xhtml-3000.2.2</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true"></a></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true"></a>[<span class="ex">nix-shell</span>:~]$ ghci</span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true"></a><span class="ex">GHCi</span>, version 8.2.1: http://www.haskell.org/ghc/  :? for help</span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true"></a><span class="ex">Prelude</span><span class="op">&gt;</span> import Data.Aeson</span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true"></a><span class="ex">Prelude</span> Data.Aeson<span class="op">&gt;</span> import Data.DList</span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true"></a><span class="ex">Prelude</span> Data.Aeson Data.DList<span class="op">&gt;</span></span></code></pre></div>
+<p>Finally, you can define a very handy shell function for making it easier to spin up a new shell without having to remember the precise syntax for the <code>nix-shell</code> call above. Add this to your <code>~/.bash_profile</code>, <code>~/.bashrc</code> or what have you:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">function</span><span class="fu"> nix-haskell()</span> <span class="kw">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>	<span class="kw">if [[</span> <span class="va">$#</span> <span class="ot">-lt</span> 2<span class="kw"> ]]</span>;</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a>	<span class="kw">then</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>		<span class="bu">echo</span> <span class="st">&quot;Must provide a ghc version (e.g ghc821) and at least one package&quot;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>		<span class="bu">return</span> 1<span class="kw">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a>	<span class="kw">else</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a>		<span class="va">ghcver=$1</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a>		<span class="va">pkgs=${@:2}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a>		<span class="bu">echo</span> <span class="st">&quot;Starting haskell shell, ghc = </span><span class="va">$ghcver</span><span class="st">, pkgs = </span><span class="va">$pkgs</span><span class="st">&quot;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a>		<span class="ex">nix-shell</span> -p <span class="st">&quot;haskell.packages.</span><span class="va">$ghcver</span><span class="st">.ghcWithPackages (pkgs: with pkgs; [</span><span class="va">$pkgs</span><span class="st">])&quot;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a>	<span class="kw">fi</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a><span class="kw">}</span></span></code></pre></div>
+<p>The <code>with pkgs;</code> bit simply allows us to say <code>[aeson dlist]</code> instead of <code>[pkgs.aeson pkgs.dlist]</code>, it just “opens” the <code>pkgs</code> “namespace”, like <code>RecordWildCards</code> in Haskell, when you write <code>SomeRecord{..}</code> to bring all the fields of a record in scope, with the field selector name as variable name for each field.</p>
+<p>Now entering our previous shell is even simpler!</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>$ <span class="ex">nix-haskell</span> ghc821 aeson dlist</span></code></pre></div>
+<p>Of course, if you need private dependencies or fancier environments, you do need to resort to writing a <code>shell.nix</code> that carefully puts everything together (not that it’s that complicated, but definitely not as simple as this <code>nix-haskell</code> command). However, for a quick hacking session or exploration of an idea, I’m not aware of a nicer solution.</p></div>
+
+	</div>
+      </div>
+      <div class="content has-text-centered">
+	<p>Powered by <a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+	  - <a href="../rss.xml">RSS feed</a>
+	  - <a href="../servant/">servant paper</a>
+	</p>
+      </div>
+      
+      <p></p>
+    </div>
+  </body>
+</html>

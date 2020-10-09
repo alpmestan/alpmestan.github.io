@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="alp">
+    <meta name="generator" content="hakyll">
+    <meta name="description" content="Alp's notes">
+    <link rel="canonical" href="https://alpmestan.github.io/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHC Core by example, episode 2: Evaluation - Alp's notes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css">
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      
+      <div class="columns">
+	<div class="column toc is-one-fifth">
+	  <p><a href="../">Index</a></p>
+	  <p><a href="../notes/ghc-core-by-example-episode-2-evaluation.html">GHC Core by example, episode 2: Evaluation</a></p>
+	  <ul>
+<li><a href="#what-do-you-mean-evaluation">What do you mean, “evaluation” ?</a></li>
+<li><a href="#a-first-example">A first example</a></li>
+<li><a href="#maybe-a-second">Maybe a second?</a></li>
+</ul>
+	</div>
+	<div class="column">
+          <div class="columns">
+  <div class="column">
+    <h1 class="title">GHC Core by example, episode 2: Evaluation</h1>
+  </div>
+  <div class="column is-one-fifth posted" style="color: #aaa">Posted on October  1, 2013</div>
+</div>
+<div class="article"><p>This post is the second episode of my <em>GHC Core by example</em> series. See the first one <a href="../notes/ghc-core-by-example-episode-1.html">here</a>.</p>
+<section id="what-do-you-mean-evaluation" class="level2">
+<h2>What do you mean, “evaluation” ?</h2>
+<p>You are probably aware, whatever your level is, that Haskell is really different from the usual mainstream languages. One of the key differences is that evaluation happens “as needed”. To know more about this, read about <em>lazy evaluation</em> (I have a work-in-progress article <a href="http://github.com/alpmestan/oh-my-laziness">here</a>).</p>
+<p>It means that most values in your program will first be a thunk until they are actually required, for the evaluation of another expression in which the value appears generally. Every Haskell code compiled with GHC gets translated to Core, so can we see evaluation appear more explicitly in Core? Well, yes. Let’s see how that goes.</p>
+</section>
+<section id="a-first-example" class="level2">
+<h2>A first example</h2>
+<p>Let’s just look at a simple function, in a <code>Eval.hs</code> module.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="ot">f ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>f x <span class="ot">=</span> x <span class="op">+</span> <span class="dv">1</span></span></code></pre></div>
+<p>Let’s inspect the generated core with the following options.</p>
+<pre><code>$ ghc -O2 -ddump-simpl -dsuppress-idinfo -dsuppress-coercions -dsuppress-type-applications -dsuppress-uniques -dsuppress-module-prefixes Eval.hs</code></pre>
+<p>We get:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="ot">f ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>f <span class="ot">=</span> \ (<span class="ot">x ::</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="kw">case</span> x <span class="kw">of</span> _ { <span class="dt">I</span><span class="op">#</span> x1 <span class="ot">-&gt;</span> <span class="dt">I</span><span class="op">#</span> (<span class="op">+#</span> x1 <span class="dv">1</span>) }</span></code></pre></div>
+<p>So the argument being an <code>Int</code>, it’s a <em>boxed</em> integer, thus a normal Haskell value. That means that if <code>x</code> hasn’t been evaluated yet, the evaluation of the expression yielding <code>x</code> will happen through that <code>case x of ...</code> expression.</p>
+<p>Wait, we are talking about that <code>case</code> expression, but it looks quite different than what we are used to. Generally, there is no <code>_</code> after the <code>of</code> keyword. Why is there one there? That’s just a small detail, but let’s get this out of the way so we can get used to it easily. The general pattern is:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="kw">case</span> expr <span class="kw">of</span> ident { <span class="op">...</span> }</span></code></pre></div>
+<p>where <code>ident</code> will just bind to the evaluated <code>expr</code> so that you can refer to it on the right hand side of the different clauses of your <code>case ... of</code> expressions. For example:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a><span class="co">-- for some list 'xs'</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="kw">case</span> <span class="fu">null</span> xs <span class="kw">of</span> b {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>    <span class="dt">True</span> <span class="ot">-&gt;</span> <span class="fu">error</span> <span class="st">&quot;boo empty list&quot;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>    _    <span class="ot">-&gt;</span> b</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>    }</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a><span class="co">-- yes, this is a bad function</span></span></code></pre></div>
+<p><code>Int</code> is defined by <code>data Int = I# Int#</code> where <code>Int#</code> is the actual machine integer type, unboxed and all. So we really see here that the <code>case ... of</code> “pattern matches” on the <code>Int</code>, which has only one constructor. However, the value stored inside being an <em>unboxed</em> integer means that it’s really sitting there, there’s no laziness going on there. So we actually have fully evaluated that Int. After that, we perform the native <code>Int#</code> addition with <code>(+#)</code> and repack that into a <code>Int</code> with the <code>I#</code> constructor.</p>
+</section>
+<section id="maybe-a-second" class="level2">
+<h2>Maybe a second?</h2>
+<p>Let’s introduce another level of laziness.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="ot">g ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a>g <span class="dt">Nothing</span>  <span class="ot">=</span> <span class="dt">Nothing</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>g (<span class="dt">Just</span> x) <span class="ot">=</span> <span class="dt">Just</span> (x<span class="op">+</span><span class="dv">1</span>)</span></code></pre></div>
+<p>We’re basically doing the same, except that, this time, we’re adding 1 to an <code>Int</code> wrapped in <code>Maybe</code>. What does the Core for that look like?</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true"></a><span class="ot">g ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Int</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true"></a>g <span class="ot">=</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true"></a>  \ (<span class="ot">ds ::</span> <span class="dt">Maybe</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true"></a>    <span class="kw">case</span> ds <span class="kw">of</span> _ {</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true"></a>      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="dt">Nothing</span>;</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true"></a>      <span class="dt">Just</span> x <span class="ot">-&gt;</span> <span class="dt">Just</span> (<span class="kw">case</span> x <span class="kw">of</span> _ { <span class="dt">I</span><span class="op">#</span> x1 <span class="ot">-&gt;</span> <span class="dt">I</span><span class="op">#</span> (<span class="op">+#</span> x1 <span class="dv">1</span>) })</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true"></a>    }</span></code></pre></div>
+<p>So, when passed a <code>Maybe Int</code> value, <code>g</code> will evaluate whether that value is <code>Nothing</code> or <code>Just &lt;some int&gt;</code>. That’s achieved by the first (outermost) <code>case ... of</code>. The inner <code>case ... of</code> is the place where we actually evaluate what the value of that <code>Int</code> is (it could be a non-terminating computation like <code>product [1..]</code>, we don’t know yet and didn’t need to). You even may have noticed that the inner <code>case</code> is identical to the Core we saw for <code>f</code> earlier.</p>
+<p>I haven’t mentionned this yet, but you may have noticed that we initially were doing the pattern matching by writing two equations, one for each constructor of <code>Maybe</code>, whereas it’s a <code>case ... of</code> in the Core code: that’s how it always ends up being rewritten in Core, meaning our Haskell version is just some syntactic sugar around a <code>case ... of</code>.</p>
+<p>And your everyday haskell code gets evaluated the very same way, evaluating outermost constructors, and then going deep inside algebraic data types <em>as much as necessary for the calling code</em>, not more. Everything you compute in your Haskell code boils down to <code>case ... of</code> expressions in Core, <strong>that’s how values are evaluated</strong>.</p>
+<p>Consider this code:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true"></a><span class="ot">h ::</span> <span class="dt">StateT</span> [<span class="dt">Int</span>] [] <span class="dt">String</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true"></a>h <span class="ot">=</span> <span class="kw">do</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true"></a>  s <span class="ot">&lt;-</span> get</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true"></a>  x <span class="ot">&lt;-</span> lift s</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true"></a>  put <span class="op">$</span> <span class="fu">map</span> (<span class="op">+</span><span class="dv">5</span>) s</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true"></a>  <span class="fu">return</span> <span class="op">$</span> <span class="fu">show</span> x</span></code></pre></div>
+<p>Quite short right? Here’s the Core.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true"></a><span class="ot">lvl ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true"></a>lvl <span class="ot">=</span> \ (<span class="ot">ds ::</span> <span class="dt">Int</span>) <span class="ot">-&gt;</span> <span class="kw">case</span> ds <span class="kw">of</span> _ { <span class="dt">I</span><span class="op">#</span> x <span class="ot">-&gt;</span> <span class="dt">I</span><span class="op">#</span> (<span class="op">+#</span> x <span class="dv">5</span>) }</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true"></a><span class="dt">Rec</span> {</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true"></a><span class="ot">h_go ::</span> [([<span class="dt">Int</span>], [<span class="dt">Int</span>])] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">Int</span>])]</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true"></a>h_go <span class="ot">=</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true"></a>  \ (<span class="ot">ds ::</span> [([<span class="dt">Int</span>], [<span class="dt">Int</span>])]) <span class="ot">-&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true"></a>    <span class="kw">case</span> ds <span class="kw">of</span> _ {</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true"></a>      [] <span class="ot">-&gt;</span> [];</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true"></a>      <span class="op">:</span> y ys <span class="ot">-&gt;</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true"></a>        <span class="kw">case</span> y <span class="kw">of</span> _ { (a5, s') <span class="ot">-&gt;</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true"></a>        <span class="kw">let</span> {</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true"></a><span class="ot">          eta ::</span> [<span class="dt">Int</span>]</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true"></a>          eta <span class="ot">=</span> <span class="fu">map</span> lvl a5 } <span class="kw">in</span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true"></a>        letrec {</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true"></a><span class="ot">          go ::</span> [(<span class="dt">Int</span>, [<span class="dt">Int</span>])] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">Int</span>])]</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true"></a>          go <span class="ot">=</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true"></a>            \ (<span class="ot">ds1 ::</span> [(<span class="dt">Int</span>, [<span class="dt">Int</span>])]) <span class="ot">-&gt;</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true"></a>              <span class="kw">case</span> ds1 <span class="kw">of</span> _ {</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true"></a>                [] <span class="ot">-&gt;</span> [];</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true"></a>                <span class="op">:</span> y1 ys1 <span class="ot">-&gt;</span></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true"></a>                  <span class="kw">let</span> {</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true"></a><span class="ot">                    a1 ::</span> <span class="dt">String</span></span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true"></a>                    a1 <span class="ot">=</span></span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true"></a>                      <span class="kw">case</span> y1 <span class="kw">of</span> _ { (a2, s'1) <span class="ot">-&gt;</span></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true"></a>                      <span class="kw">case</span> a2 <span class="kw">of</span> _ { <span class="dt">I</span><span class="op">#</span> ww <span class="ot">-&gt;</span> <span class="op">$</span>wshowSignedInt <span class="dv">0</span> ww ([]) }</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true"></a>                      } } <span class="kw">in</span></span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true"></a>                  letrec {</span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true"></a>                    <span class="op">$</span><span class="ot">sgo ::</span> () <span class="ot">-&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> [((), [<span class="dt">Int</span>])] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">Int</span>])]</span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true"></a>                    <span class="op">$</span>sgo <span class="ot">=</span></span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true"></a>                      \ _ (<span class="ot">sc1 ::</span> [<span class="dt">Int</span>]) (<span class="ot">sc2 ::</span> [((), [<span class="dt">Int</span>])]) <span class="ot">-&gt;</span> <span class="op">:</span> (a1, sc1) (go1 sc2);</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true"></a><span class="ot">                    go1 ::</span> [((), [<span class="dt">Int</span>])] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">Int</span>])]</span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true"></a>                    go1 <span class="ot">=</span></span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true"></a>                      \ (<span class="ot">ds2 ::</span> [((), [<span class="dt">Int</span>])]) <span class="ot">-&gt;</span></span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true"></a>                        <span class="kw">case</span> ds2 <span class="kw">of</span> _ {</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true"></a>                          [] <span class="ot">-&gt;</span> [];</span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true"></a>                          <span class="op">:</span> y2 ys2 <span class="ot">-&gt;</span> <span class="op">:</span> (a1, <span class="kw">case</span> y2 <span class="kw">of</span> _ { (a2, s'1) <span class="ot">-&gt;</span> s'1 }) (go1 ys2)</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true"></a>                        }; } <span class="kw">in</span></span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true"></a>                  <span class="kw">case</span> <span class="op">$</span>sgo () eta ([]) <span class="kw">of</span> _ {</span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true"></a>                    [] <span class="ot">-&gt;</span> go ys1;</span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true"></a>                    <span class="op">:</span> x xs <span class="ot">-&gt;</span> <span class="op">:</span> x (<span class="op">++</span> xs (go ys1))</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true"></a>                  }</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true"></a>              }; } <span class="kw">in</span></span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true"></a>        letrec {</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true"></a><span class="ot">          go1 ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> [(<span class="dt">Int</span>, [<span class="dt">Int</span>])]</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true"></a>          go1 <span class="ot">=</span></span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true"></a>            \ (<span class="ot">ds1 ::</span> [<span class="dt">Int</span>]) <span class="ot">-&gt;</span></span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true"></a>              <span class="kw">case</span> ds1 <span class="kw">of</span> _ {</span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true"></a>                [] <span class="ot">-&gt;</span> [];</span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true"></a>                <span class="op">:</span> y1 ys1 <span class="ot">-&gt;</span> <span class="op">:</span> (y1, s') (go1 ys1)</span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true"></a>              }; } <span class="kw">in</span></span>
+<span id="cb9-52"><a href="#cb9-52" aria-hidden="true"></a>        <span class="kw">case</span> go (go1 a5) <span class="kw">of</span> _ {</span>
+<span id="cb9-53"><a href="#cb9-53" aria-hidden="true"></a>          [] <span class="ot">-&gt;</span> h_go ys;</span>
+<span id="cb9-54"><a href="#cb9-54" aria-hidden="true"></a>          <span class="op">:</span> x xs <span class="ot">-&gt;</span> <span class="op">:</span> x (<span class="op">++</span> xs (h_go ys))</span>
+<span id="cb9-55"><a href="#cb9-55" aria-hidden="true"></a>        }</span>
+<span id="cb9-56"><a href="#cb9-56" aria-hidden="true"></a>        }</span>
+<span id="cb9-57"><a href="#cb9-57" aria-hidden="true"></a>    }</span>
+<span id="cb9-58"><a href="#cb9-58" aria-hidden="true"></a>end <span class="dt">Rec</span> }</span>
+<span id="cb9-59"><a href="#cb9-59" aria-hidden="true"></a></span>
+<span id="cb9-60"><a href="#cb9-60" aria-hidden="true"></a><span class="ot">h1 ::</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, [<span class="dt">Int</span>])]</span>
+<span id="cb9-61"><a href="#cb9-61" aria-hidden="true"></a>h1 <span class="ot">=</span> \ (<span class="ot">eta ::</span> [<span class="dt">Int</span>]) <span class="ot">-&gt;</span> h_go (<span class="op">:</span> (eta, eta) ([]))</span>
+<span id="cb9-62"><a href="#cb9-62" aria-hidden="true"></a></span>
+<span id="cb9-63"><a href="#cb9-63" aria-hidden="true"></a><span class="ot">h ::</span> <span class="dt">StateT</span> [<span class="dt">Int</span>] [] <span class="dt">String</span></span>
+<span id="cb9-64"><a href="#cb9-64" aria-hidden="true"></a>h <span class="ot">=</span> h1 <span class="ot">`cast`</span> <span class="op">...</span></span></code></pre></div>
+<p>This is all complicated, because GHC inlines functions quite agressively (in particular with <code>-O2</code> – there are really noticeable differences in the Core between <code>-O0</code> and <code>-O2</code>, or even <code>-O1</code>). But that was just to show you that everything in Core is really about function calls (including <em>constructors</em>) and case expressions. Among other things, we can see for example that GHC named our <code>(+5)</code> function (it’s <code>lvl</code> in the Core). The structure of this Core code is the result of mixing the original definitions of the functions and the way GHC’s inliner works.</p>
+<p>That is all for this second episode. It’s quite short but I wanted to get evaluation out of the way in order to emphasize on important transformations GHC does at the Core level in later posts. I apologize for the delay, I will most likely push new posts in this series more regularly.</p>
+</section></div>
+
+	</div>
+      </div>
+      <div class="content has-text-centered">
+	<p>Powered by <a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+	  - <a href="../rss.xml">RSS feed</a>
+	  - <a href="../servant/">servant paper</a>
+	</p>
+      </div>
+      
+      <p></p>
+    </div>
+  </body>
+</html>

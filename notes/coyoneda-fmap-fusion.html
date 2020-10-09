@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="author" content="alp">
+    <meta name="generator" content="hakyll">
+    <meta name="description" content="Alp's notes">
+    <link rel="canonical" href="https://alpmestan.github.io/">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coyoneda and fmap fusion - Alp's notes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.1/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/syntax.css">
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
+  </head>
+  <body>
+    <div class="container">
+      
+      <div class="columns">
+	<div class="column toc is-one-fifth">
+	  <p><a href="../">Index</a></p>
+	  <p><a href="../notes/coyoneda-fmap-fusion.html">Coyoneda and fmap fusion</a></p>
+	  <ul>
+<li><a href="#coyoneda">Coyoneda</a></li>
+</ul>
+	</div>
+	<div class="column">
+          <div class="columns">
+  <div class="column">
+    <h1 class="title">Coyoneda and fmap fusion</h1>
+  </div>
+  <div class="column is-one-fifth posted" style="color: #aaa">Posted on August 17, 2017</div>
+</div>
+<div class="article"><p>Let’s quickly see how the (dual variant of the) Yoneda lemma can speed up some Haskell programs – more specifically ones that are repeatedly calling <code>fmap</code> to transform some data within a <code>Functor</code>.</p>
+<p>We will be focusing on the following <code>Functor</code>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Tree</span> a</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  <span class="ot">=</span> <span class="dt">Bin</span> a (<span class="dt">Tree</span> a) (<span class="dt">Tree</span> a)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="op">|</span> <span class="dt">Nil</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>  <span class="kw">deriving</span> (<span class="dt">Eq</span>, <span class="dt">Show</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Tree</span> <span class="kw">where</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>  <span class="fu">fmap</span> _ <span class="dt">Nil</span>         <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>  <span class="fu">fmap</span> f (<span class="dt">Bin</span> a l r) <span class="ot">=</span> <span class="dt">Bin</span> (f a) (<span class="fu">fmap</span> f l) (<span class="fu">fmap</span> f r)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a><span class="co">-- we'll also use this instance to perform a silly computation</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="co">-- on our tree after some transformations have occured</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Foldable</span> <span class="dt">Tree</span> <span class="kw">where</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>  <span class="fu">foldMap</span> _ <span class="dt">Nil</span>         <span class="ot">=</span> <span class="fu">mempty</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>  <span class="fu">foldMap</span> f (<span class="dt">Bin</span> a l r) <span class="ot">=</span> f a <span class="op">&lt;&gt;</span> <span class="fu">foldMap</span> f l <span class="op">&lt;&gt;</span> <span class="fu">foldMap</span> f r</span></code></pre></div>
+<p>A simple binary tree with data stored in the nodes, whose <code>Functor</code> instance lets us map a function over each <code>a</code> stored in our tree and whose <code>Foldable</code> instance lets us combine computations performed over our <code>a</code>s.</p>
+<section id="coyoneda" class="level1">
+<h1>Coyoneda</h1>
+<p>The Coyoneda lemma, when interpreted on haskell <code>Functor</code>s, tells us that <code>Coyoneda f a</code> is equivalent (isomorphic) to <code>f a</code>, where <code>Coyoneda</code> is:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a><span class="kw">data</span> <span class="dt">Coyoneda</span> f a <span class="kw">where</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="dt">Coyoneda</span><span class="ot"> ::</span> (b <span class="ot">-&gt;</span> a) <span class="ot">-&gt;</span> f b <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> f a</span></code></pre></div>
+<p>We see that it holds an <code>f b</code> and a way to go from <code>b</code>s to <code>a</code>s, effectively making it equivalent to <code>f a</code> if you <code>fmap</code> the first field on the second one. That’s also the only sensible thing we can do with such a value, as the <code>b</code> is hidden.</p>
+<p>If it’s equivalent to <code>f a</code>, it must be a <code>Functor</code> too? Sure enough it is.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a><span class="kw">instance</span> <span class="dt">Functor</span> (<span class="dt">Coyoneda</span> f) <span class="kw">where</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>  <span class="fu">fmap</span> f (<span class="dt">Coyoneda</span> b2a fb) <span class="ot">=</span> <span class="dt">Coyoneda</span> (f <span class="op">.</span> b2a) fb</span></code></pre></div>
+<p>We see that calling <code>fmap f</code> amounts to “accumulating” more work in the <code>b -&gt; a</code> field, possibly even changing from a given <code>a</code> to some other type, as allowed by <code>fmap</code>. This is exactly the piece of code that powers “fmap fusion”. Instead of going from <code>f a</code> to <code>f b</code> with <code>fmap f</code> and then to <code>f c</code> with <code>fmap g</code>, the <code>Coyoneda</code> representation keeps hold of the original <code>f a</code>, which is left untouched by the <code>Functor</code> instance from above, and instead simply composes <code>f</code> and <code>g</code> in that first field.</p>
+<p>Now, we said that <code>f a</code> and <code>Coyoneda f a</code> are isomorphic but did not provide functions to prove our claim, let’s fix that right away.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a><span class="ot">coyo ::</span> f a <span class="ot">-&gt;</span> <span class="dt">Coyoneda</span> f a</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>coyo <span class="ot">=</span> <span class="dt">Coyoneda</span> <span class="fu">id</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a><span class="ot">uncoyo ::</span> <span class="dt">Functor</span> f <span class="ot">=&gt;</span> <span class="dt">Coyoneda</span> f a <span class="ot">-&gt;</span> f a</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>uncoyo (<span class="dt">Coyoneda</span> f fa) <span class="ot">=</span> <span class="fu">fmap</span> f fa</span></code></pre></div>
+<p>Note that we do not need <code>f</code> to be a <code>Functor</code> to build a <code>Coyoneda f a</code>, as there’s no need to call <code>fmap</code> until the very end, when we have composed all our transformations and finally want to get the final result as some <code>f a</code>, not <code>Coyoneda f a</code>.</p>
+<p>Maybe it’s still not clear to you that successive fmap calls are fused, so let’s <em>prove</em> it. We want to show that for two functions <code>f :: b -&gt; c</code> and <code>g :: a -&gt; b</code>, <code>uncoyo . fmap f . fmap g . Coyoneda id = fmap (f . g)</code>.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>uncoyo <span class="op">.</span> <span class="fu">fmap</span> f <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> coyo</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a>  <span class="ot">=</span> uncoyo <span class="op">.</span> <span class="fu">fmap</span> f <span class="op">.</span> <span class="fu">fmap</span> g <span class="op">.</span> <span class="dt">Coyoneda</span> <span class="fu">id</span> <span class="co">-- definition of coyo</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a>  <span class="ot">=</span> uncoyo <span class="op">.</span> <span class="fu">fmap</span> f <span class="op">.</span> <span class="dt">Coyoneda</span> (g <span class="op">.</span> <span class="fu">id</span>)    <span class="co">-- Functor instance for Coyoneda</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a>  <span class="ot">=</span> uncoyo <span class="op">.</span> <span class="fu">fmap</span> f <span class="op">.</span> <span class="dt">Coyoneda</span> g           <span class="co">-- g . id = g</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a>  <span class="ot">=</span> uncoyo <span class="op">.</span> <span class="dt">Coyoneda</span> (f <span class="op">.</span> g)              <span class="co">-- Functor instance for Coyoneda</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a>  <span class="ot">=</span> <span class="fu">fmap</span> (f <span class="op">.</span> g)                           <span class="co">-- definition of uncoyo</span></span></code></pre></div>
+<p>Nice! And you could of course chain any number of <code>fmap</code> calls and they would all get fused into a single <code>fmap</code> call that applies the composition of all the functions you wanted to <code>fmap</code>.</p>
+<p>For instance, back to our tree, let’s define some silly computations:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true"></a><span class="co">-- sum all the values in a tree</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true"></a><span class="ot">sumTree ::</span> <span class="dt">Num</span> a <span class="ot">=&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> a</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true"></a>sumTree <span class="ot">=</span> getSum <span class="op">.</span> <span class="fu">foldMap</span> <span class="dt">Sum</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true"></a><span class="co">-- an infinite tree with integer values</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true"></a><span class="ot">t ::</span> <span class="dt">Tree</span> <span class="dt">Integer</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true"></a>t <span class="ot">=</span> go <span class="dv">1</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true"></a>  <span class="kw">where</span> go r <span class="ot">=</span> <span class="dt">Bin</span> r (go (<span class="dv">2</span><span class="op">*</span>r)) (go (<span class="dv">2</span><span class="op">*</span>r <span class="op">+</span> <span class="dv">1</span>))</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true"></a><span class="co">-- only keep the given number of depth levels of</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true"></a><span class="co">-- the given tree</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true"></a><span class="ot">takeDepth ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true"></a>takeDepth _ <span class="dt">Nil</span> <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true"></a>takeDepth <span class="dv">0</span> _   <span class="ot">=</span> <span class="dt">Nil</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true"></a>takeDepth d (<span class="dt">Bin</span> r t1 t2) <span class="ot">=</span> <span class="dt">Bin</span> r (takeDepth (d<span class="op">-</span><span class="dv">1</span>) t1) (takeDepth (d<span class="op">-</span><span class="dv">1</span>) t2)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true"></a><span class="co">-- a chain of transformations to apply to our tree</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true"></a><span class="ot">transform ::</span> (<span class="dt">Functor</span> f, <span class="dt">Num</span> a) <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> f a</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true"></a>transform <span class="ot">=</span> <span class="fu">fmap</span> (<span class="op">^</span><span class="dv">2</span>) <span class="op">.</span> <span class="fu">fmap</span> (<span class="op">+</span><span class="dv">1</span>) <span class="op">.</span> <span class="fu">fmap</span> (<span class="op">*</span><span class="dv">2</span>)</span></code></pre></div>
+<p>Now with a simple <code>main</code> we can compare how efficient it is to compute <code>sumTree $ takeDepth n (transform t)</code> by using <code>Tree</code> vs <code>Coyoneda Tree</code> as the functor on which the transformations are applied. You can find an executable module in <a href="https://gist.github.com/alpmestan/62cfef6076800a27042fe59f6b1fb8b0">this gist</a>.</p>
+<p>If we compare with and without Coyoneda for <code>n = 23</code>, there’s already a noticeable (and reproducible) difference:</p>
+<pre><code>$ time ./yo 23
+787061080478271406079
+
+real0m3.968s
+user0m3.967s
+sys0m0.000s
+
+$ time ./yo 23 --coyo
+787061080478271406079
+
+real0m2.384s
+user0m2.380s
+sys0m0.003s</code></pre>
+</section></div>
+
+	</div>
+      </div>
+      <div class="content has-text-centered">
+	<p>Powered by <a href="https://jaspervdj.be/hakyll/">Hakyll</a>
+	  - <a href="../rss.xml">RSS feed</a>
+	  - <a href="../servant/">servant paper</a>
+	</p>
+      </div>
+      
+      <p></p>
+    </div>
+  </body>
+</html>
