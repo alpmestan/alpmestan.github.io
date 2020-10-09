@@ -20,7 +20,7 @@
 <div class="article"><p>Here is a simple way to deploy a NixOS configuration to a QEMU VM.</p>
 <section id="the-system-configuration" class="level1">
 <h1>The system configuration</h1>
-<p>For demo purposes, we will be deploying a system that has OpenSSH and nginx running, forwarding both ports to the host so as to be able to ssh into the machine and access the content served by nginx.</p>
+<p>For demo purposes, we will be deploying a system that has OpenSSH, forwarding port 22 to the host so as to be able to ssh into the machine.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode nix"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="co"># demo.nix</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">{</span> <span class="ex">pkgs</span>, lib, config, ... <span class="kw">}</span>:</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a></span>
