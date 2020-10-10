@@ -26,7 +26,7 @@
   <div class="column">
     <h1 class="title">Quick and minimal Haskell hacking with Nix</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on September  6, 2017</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on September  6, 2017</div>
 </div>
 <div class="article"><p>This post will not explain in detail how <a href="https://nixos.org/nix/">Nix</a> can build haskell projects or set up development environments, but simply show one workflow that I use a lot. Please refer to <a href="https://nixos.org/nixpkgs/manual/#users-guide-to-the-haskell-infrastructure">this manual</a>, <a href="https://github.com/Gabriel439/haskell-nix#nix-and-haskell-in-production">Gabriel Gonzalez’s guide</a> and various blog posts out there to find out more about Nix and Haskell.</p>
 <p>Alright, so I often end up wanting to quickly experiment with some ideas in a ghci session or a standalone Haskell module. Sometimes I can get away by simply prototyping my idea with data types and functions from base, but sometimes (most of the time, really) I want (or need) to use other libraries. I’d like to have a magic command to which I would give a ghc version and a list of haskell packages, and I would end up with an environment with ghc/ghci and all the aforementionned packages pre-installed in that ghc’s package database, so that just running <code>ghci</code> would be enough for being able to use those packages. Similarly, standalone modules could be built just with <code>ghc --make</code> for example. No need for a cabal file, cabal-install or stack.</p>

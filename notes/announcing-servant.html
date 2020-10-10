@@ -26,7 +26,7 @@
   <div class="column">
     <h1 class="title">Write web services around databases with 0 boilerplate: announcing servant 0.1</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on July 26, 2014</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on July 26, 2014</div>
 </div>
 <div class="article"><p>At <a href="http://github.com/zalora">Zalora</a>, we write a lot of web services and web applications in general. We use <a href="http://hackage.haskell.org/package/scotty">scotty</a> a lot. And after having written a couple of web-services, despite some small handy abstractions we came up with, it really felt like we could achieve the same thing in a very concise and minimalist manner, by letting the compiler do more work for us so that we would just have to write wrapper for our SQL queries in haskell. All we had to do was to take advantage of a couple of extensions that landed in GHC in the past few years and propagate the right bits of information at the type-level. And this is what we’ve done.</p>
 <p>The result is servant (<a href="http://github.com/zalora/servant">github</a>, <a href="http://hackage.haskell.org/package/servant">hackage</a>), which lets you declare <em>resources</em>, which just represent a bunch of operations (think endpoints) that operate on some type. So you could for example declare a <strong>users</strong> resource that supports adding, deleting and listing users in the following way:</p>

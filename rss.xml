@@ -15,7 +15,7 @@
   <div class="column">
     <h1 class="title">Deploying a NixOS configuration into a QEMU VM</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on October  9, 2020</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on October  9, 2020</div>
 </div>
 <div class="article"><p>Here is a simple way to deploy a NixOS configuration to a QEMU VM.</p>
 <section id="the-system-configuration" class="level1">
@@ -135,7 +135,7 @@
   <div class="column">
     <h1 class="title">Quick and minimal Haskell hacking with Nix</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on September  6, 2017</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on September  6, 2017</div>
 </div>
 <div class="article"><p>This post will not explain in detail how <a href="https://nixos.org/nix/">Nix</a> can build haskell projects or set up development environments, but simply show one workflow that I use a lot. Please refer to <a href="https://nixos.org/nixpkgs/manual/#users-guide-to-the-haskell-infrastructure">this manual</a>, <a href="https://github.com/Gabriel439/haskell-nix#nix-and-haskell-in-production">Gabriel Gonzalez’s guide</a> and various blog posts out there to find out more about Nix and Haskell.</p>
 <p>Alright, so I often end up wanting to quickly experiment with some ideas in a ghci session or a standalone Haskell module. Sometimes I can get away by simply prototyping my idea with data types and functions from base, but sometimes (most of the time, really) I want (or need) to use other libraries. I’d like to have a magic command to which I would give a ghc version and a list of haskell packages, and I would end up with an environment with ghc/ghci and all the aforementionned packages pre-installed in that ghc’s package database, so that just running <code>ghci</code> would be enough for being able to use those packages. Similarly, standalone modules could be built just with <code>ghc --make</code> for example. No need for a cabal file, cabal-install or stack.</p>
@@ -230,7 +230,7 @@
   <div class="column">
     <h1 class="title">Coyoneda and fmap fusion</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on August 17, 2017</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on August 17, 2017</div>
 </div>
 <div class="article"><p>Let’s quickly see how the (dual variant of the) Yoneda lemma can speed up some Haskell programs – more specifically ones that are repeatedly calling <code>fmap</code> to transform some data within a <code>Functor</code>.</p>
 <p>We will be focusing on the following <code>Functor</code>:</p>
@@ -323,7 +323,7 @@ sys0m0.003s</code></pre>
   <div class="column">
     <h1 class="title">Write web services around databases with 0 boilerplate: announcing servant 0.1</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on July 26, 2014</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on July 26, 2014</div>
 </div>
 <div class="article"><p>At <a href="http://github.com/zalora">Zalora</a>, we write a lot of web services and web applications in general. We use <a href="http://hackage.haskell.org/package/scotty">scotty</a> a lot. And after having written a couple of web-services, despite some small handy abstractions we came up with, it really felt like we could achieve the same thing in a very concise and minimalist manner, by letting the compiler do more work for us so that we would just have to write wrapper for our SQL queries in haskell. All we had to do was to take advantage of a couple of extensions that landed in GHC in the past few years and propagate the right bits of information at the type-level. And this is what we’ve done.</p>
 <p>The result is servant (<a href="http://github.com/zalora/servant">github</a>, <a href="http://hackage.haskell.org/package/servant">hackage</a>), which lets you declare <em>resources</em>, which just represent a bunch of operations (think endpoints) that operate on some type. So you could for example declare a <strong>users</strong> resource that supports adding, deleting and listing users in the following way:</p>
@@ -358,7 +358,7 @@ sys0m0.003s</code></pre>
   <div class="column">
     <h1 class="title">Testing attoparsec parsers with hspec</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on June 18, 2014</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on June 18, 2014</div>
 </div>
 <div class="article"><p>Almost all haskellers end up, some day, having to write a parser. But then, that’s not really a problem because writing parsers in Haskell isn’t really annoying, like it tends to be elsewhere. Of special interest to us is <a href="http://hackage.haskell.org/package/attoparsec">attoparsec</a>, a <strong>very fast</strong> parser combinator library. It lets you combine small, simple parsers to express how data should be extracted from that specific format you’re working with.</p>
 <section id="getting-our-feet-wet-with-attoparsec" class="level1">
@@ -606,7 +606,7 @@ sys0m0.003s</code></pre>
   <div class="column">
     <h1 class="title">Oh my laziness!</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on October  2, 2013</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on October  2, 2013</div>
 </div>
 <div class="article"><p>So, you know quite some bits of Haskell now and are willing to dig a bit deeper, understand when something in your code is going to get evaluated, and when it won’t? You have just landed in the right place. This section will attempt to give some intuition as to how laziness is implemented in the GHC runtime, how to know when some argument of a function is evaluated, how to have a finer grained control of this, how to make some parts stricter, and how you can handle these matters directly in your data types rather than in your functions, and much more!</p>
 <!-- more -->
@@ -967,7 +967,7 @@ sys0m0.003s</code></pre>
   <div class="column">
     <h1 class="title">GHC Core by example, episode 2: Evaluation</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on October  1, 2013</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on October  1, 2013</div>
 </div>
 <div class="article"><p>This post is the second episode of my <em>GHC Core by example</em> series. See the first one <a href="/notes/ghc-core-by-example-episode-1.html">here</a>.</p>
 <section id="what-do-you-mean-evaluation" class="level2">
@@ -1101,7 +1101,7 @@ sys0m0.003s</code></pre>
   <div class="column">
     <h1 class="title">A simple GLFW-b example</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on July 17, 2013</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on July 17, 2013</div>
 </div>
 <div class="article"><p>There are some really clever and productive people on the <a href="irc://irc.freenode.net/haskell-game">#haskell-game</a> IRC channel. Among them is <a href="https://github.com/bsl">Brian Lewis</a>, who maintains a binding to the <a href="http://www.glfw.org">GLFW</a> library, which lets you create windows with OpenGL contexts in them and manage inputs and events. His binding is called <a href="http://hackage.haskell.org/package/GLFW-b">GLFW-b</a> and is just a <code>cabal install</code> away from you.</p>
 <p>Recently, Brian updated his package to match GLFW 3.0, so I thought it could be a good opportunity to see how it felt to use his package. I decided to port <a href="http://www.glfw.org/docs/3.0/quick.html#quick_example">the official “quick example”</a> in Haskell using GLFW-b, and here’s the reulting code. I tried to keep the same spirit as in the original code, just introducing some utility functions to make that code smoother to read.</p>
@@ -1194,7 +1194,7 @@ sys0m0.003s</code></pre>
   <div class="column">
     <h1 class="title">GHC Core by example, episode 1: Hello, Core!</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on June 27, 2013</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on June 27, 2013</div>
 </div>
 <div class="article"><p>GHC Core is well behind monads and burritos in the list of most documented topics. You can gather some knowledge from a few blog posts by Haskell gurus, some from StackOverflow or haskell-cafe and some from the GHC commentary or GHC’s code itself. I will try from time to time to publish a simple case-study to see how your usual Haskell code gets translated to GHC Core, learning some bits of Core along the way. Sounds good? Then read on.</p>
 <section id="whats-ghc-core" class="level1">
@@ -1371,7 +1371,7 @@ Result size of Tidy Core = {terms: 3, types: 1, coercions: 0}</code></pre>
   <div class="column">
     <h1 class="title">gloss-juicy-0.1: Load JuicyPixels images in your gloss applications</h1>
   </div>
-  <div class="column is-one-fifth posted" style="color: #aaa">Posted on April  2, 2013</div>
+  <div class="column is-one-fifth posted is-pulled-right" style="color: #aaa">Posted on April  2, 2013</div>
 </div>
 <div class="article"><p>Most of you probably know about <a href="http://hackage.haskell.org/package/gloss">gloss</a> - that simple graphics library written by Ben Lippmeier. If you don’t, and are interested in writing more or less simple 2D graphics applications, you really should check it out and kiss SDL goodbye.</p>
 <p>On the other hand, there’s <a href="http://hackage.haskell.org/package/JuicyPixels">JuicyPixels</a>, a simple but great library for encoding/decoding images, that as a side effect lets you convert between image formats, access the raw pixels from your images, and could possibly serve as a good basis for an image processing library entirely written in haskell.</p>
