@@ -1,7 +1,7 @@
 # ===== Usage ================================================================
 #
-# make                  Prepare _out/ folder (all pages & assets)
-# make _out/index.html  Recompile just docs/index.html
+# make                  Prepare docs/ folder (all pages & assets)
+# make docs/index.html  Recompile just docs/index.html
 #
 # make watch            Start a local HTTP server and rebuild on changes
 # PORT=4242 make watch  Like above, but use port 4242
@@ -11,26 +11,26 @@
 # ============================================================================
 
 SOURCES := $(shell find src -type f -name '*.md')
-TARGETS := $(patsubst src/%.md,_out/%.html,$(SOURCES))
+TARGETS := $(patsubst src/%.md,docs/%.html,$(SOURCES))
 POSTS   := $(shell find src/posts -type f -name '*.md')
 
 .PHONY: all
-all: $(TARGETS) _out/posts.html
-	cp -R ./plots _out/
+all: $(TARGETS) docs/posts.html
+	cp -R ./plots docs/
 
 .PHONY: clean
 clean:
-	rm -rf _out ./plots/ src/posts.md
+	rm -rf docs ./plots/ src/posts.md
 
 .PHONY: watch
 watch:
 	./tools/serve.sh --watch
 
-_out/css/theme.css:
-	mkdir -p _out _out/posts
-	cp -R public/* _out/
+docs/css/theme.css:
+	mkdir -p docs/posts
+	cp -R public/* docs/
 
-_out/%.html: src/%.md template.html5 Makefile _out/css/theme.css
+docs/%.html: src/%.md template.html5 Makefile docs/css/theme.css
 	pandoc \
 		--katex \
 		--from markdown+tex_math_single_backslash \

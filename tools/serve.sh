@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-mkdir -p _out && cd _out/
+mkdir -p docs && cd docs/
 python3 -m http.server "${PORT:-8000}" &
 http_server_pid="$!"
 trap 'kill "$http_server_pid"' EXIT
