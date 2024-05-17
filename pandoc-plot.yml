@@ -1,0 +1,7 @@
+directory: ./plots/
+format: SVG
+matplotlib:
+  transparent: true
+  tight_bbox: true
+d2:
+  command_line_arguments:
