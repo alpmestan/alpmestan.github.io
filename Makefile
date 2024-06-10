@@ -39,8 +39,8 @@ docs/%.html: src/%.md template.html5 Makefile docs/css/theme.css
 		-M plot-configuration=./pandoc-plot.yml \
 		--to html5+smart \
 		--template=template \
-		--css="/css/theme.css" \
 		--css="/css/skylighting-solarized-theme.css" \
+        --css="/css/theme.css" \
 		--toc \
 		--wrap=auto \
 		--output="$@" \

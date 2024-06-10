@@ -109,7 +109,7 @@
 
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background-color: #161313;
 
@@ -132,7 +132,7 @@
 
     --color-table-heading: #242121;
   }
-}
+} */
 
 *, *:after, *:before {
   box-sizing: border-box;

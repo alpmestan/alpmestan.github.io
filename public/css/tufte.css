@@ -130,7 +130,7 @@
   --nav-toc-indent: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background-color: #111;
 
@@ -145,7 +145,7 @@
     --color-border: inherit;
     --color-border-heavy: #fff;
   }
-}
+} */
 
 h1:not(.title), h2 {
   font-style: italic;

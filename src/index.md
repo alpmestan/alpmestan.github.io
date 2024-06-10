@@ -6,14 +6,12 @@ header-includes:
 - '<link rel="stylesheet" href="../css/tufte.css">'
 ---
 
-This is the website of **Alp Mestanogullari**. You might find content at the intersection of programming, computer science, mathematics and who knows what else (e.g some [blog posts](/posts.html)).
+This is the website of **Alp Mestanogullari**. You might find content at the intersection of programming, computer science, mathematics and who knows what else. _You've been warned_.
 
- > _You've been warned_.
-
-![](/img/math.webp)
+---
 
 I'm currently CTO of a tech company, after having built a computer science, programming language and cryptography R&D team and many (delightful) years of Haskell consultancy at
-[Well-Typed](https://well-typed.com/), and [Tweag](https://tweag.io), all interleaved with attempts at launching a couple of startups.
+[Well-Typed](https://well-typed.com/) and [Tweag](https://tweag.io), all interleaved with attempts at launching a couple of startups.
 
 ---
 
@@ -35,7 +33,3 @@ I have worked on a variety of topics and projects over the years, among which:
 ---
 
 I enjoy working on problems at the intersection of (abstract or applied) mathematics, computer science and high performance computing. If you would like to explore a collaboration, [please get in touch](mailto:alpmestanATgmailDOTcom).
-
----
-
-[Blog posts](/posts.html) - [Github](https://github.com/alpmestan)
