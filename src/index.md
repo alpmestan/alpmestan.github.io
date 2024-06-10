@@ -10,7 +10,7 @@ This is the website of **Alp Mestanogullari**. You might find content at the int
 
 ---
 
-I'm currently CTO of a tech company, after having built a computer science, programming language and cryptography R&D team and many (delightful) years of Haskell consultancy at
+I was recently CTO of a tech company, after having built a computer science, programming language and cryptography R&D team, following many (delightful) years of Haskell consultancy at
 [Well-Typed](https://well-typed.com/) and [Tweag](https://tweag.io), all interleaved with attempts at launching a couple of startups.
 
 ---
