@@ -41,6 +41,7 @@ docs/%.html: src/%.md template.html5 Makefile docs/css/theme.css
 		--template=template \
 		--css="/css/skylighting-solarized-theme.css" \
         --css="/css/theme.css" \
+        --css="/css/tufte.css" \
 		--toc \
 		--wrap=auto \
 		--output="$@" \
