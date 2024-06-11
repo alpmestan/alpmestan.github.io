@@ -1272,7 +1272,7 @@ table, figure, pre, img {
 }
 
 p code {
-  border: 1pt solid;
+  border: 1pt solid #CCC;
   /* background-color: #444; */
   padding: 2pt 4pt;
   margin-left: 4pt;

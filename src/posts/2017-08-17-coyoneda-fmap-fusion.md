@@ -1,9 +1,21 @@
 ---
 title: Coyoneda and fmap fusion
 date: 2017-08-17 20:00
-header-includes:
-- '<link rel="stylesheet" href="../css/tufte.css">'
 ---
+
+``` {.d2}
+grid-rows: 2
+grid-columns: 3
+horizontal-gap: 200
+vertical-gap: 100
+f a -> f b: f
+f b -> f c: g
+Coyoneda f a -> Coyoneda f b: fmap f
+Coyoneda f b -> Coyoneda f c: fmap g
+f a <-> Coyoneda f a: "coyo/uncoyo"
+f b <-> Coyoneda f b: "coyo/uncoyo"
+f c <-> Coyoneda f c: "coyo/uncoyo"
+```
 
 # Setting the stage
 

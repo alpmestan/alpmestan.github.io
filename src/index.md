@@ -2,8 +2,6 @@
 title: "From Hask 'Til Dawn"
 author: "@alp"
 author-url: 'https://github.com/alpmestan'
-# header-includes:
-# - '<link rel="stylesheet" href="../css/tufte.css">'
 ---
 
 This is the website of **Alp Mestanogullari**. You might find content at the intersection of programming, computer science, mathematics and who knows what else. _You've been warned_.

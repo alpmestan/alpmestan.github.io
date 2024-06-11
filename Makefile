@@ -33,15 +33,17 @@ docs/css/theme.css:
 docs/%.html: src/%.md template.html5 Makefile docs/css/theme.css
 	pandoc \
 		--katex \
+		--standalone \
+		--embed-resources \
 		--from markdown+tex_math_single_backslash \
 		--filter pandoc-sidenote \
 		--filter pandoc-plot \
 		-M plot-configuration=./pandoc-plot.yml \
 		--to html5+smart \
 		--template=template \
-		--css="/css/skylighting-solarized-theme.css" \
-        --css="/css/theme.css" \
-        --css="/css/tufte.css" \
+		--css="public/css/skylighting-solarized-theme.css" \
+        --css="public/css/theme.css" \
+        --css="public/css/tufte.css" \
 		--toc \
 		--wrap=auto \
 		--output="$@" \
