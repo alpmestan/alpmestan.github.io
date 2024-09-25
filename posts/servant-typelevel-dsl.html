@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Alp Mestanogullari" />
+  <meta name="dcterms.date" content="2018-07-12" />
+  <title>Why is servant a type-level DSL?</title>
+<style>
+
+:root {
+
+--background-color: #fff;
+--color-text: #1b2733;
+--color-text-secondary: #637282;
+--color-link: #0070e0;
+--color-sidenote: #616970;
+--highlight-red: #ea9999;
+--highlight-yellow: #ffe599;
+--highlight-green: #b6d7a8;
+--highlight-blue: #a4c2f4;
+--highlight-purple: #b4a7d6;
+--color-inline-code: #1b2733;
+--color-inline-code-bg: #f3f3f8;
+--color-border: #dfdfd0;
+--color-border-heavy: #ccccd4;
+--color-table-heading: #f3f3fb;
+
+--font-family-prose: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Open Sans","Helvetica Neue",sans-serif;
+--font-family-heading: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Open Sans","Helvetica Neue",sans-serif;
+--font-family-code: Menlo, monospace;
+--side-note-number-font-family: var(--font-family-prose);
+--line-height: 26px;
+--font-size: 17px;
+--inline-code-font-size: 15px;
+--code-block-font-size: 14px;
+--code-block-side-padding: 8px;
+--line-numbers-font-size: 12px;
+--tight-code-line-height: 18px;
+--tight-code-padding-top: 5px;
+--side-note-line-height: 20px;
+--side-note-font-size: 13px;
+--side-note-code-font-size: 13px;
+--side-note-baseline-offset: 4px;
+--side-note-sup-offset: -6px;
+--side-note-number-hang-left: -6px;
+--side-note-text-indent: -9px;
+--heading-font-weight: 500;
+--title-font-size: 42px;
+--title-code-font-size: 40px;
+--title-line-height: 48px;
+--title-margin-top: 4px;
+--h1-font-size: 32px;
+--h1-code-font-size: 29px;
+--h1-line-height: 36px;
+--h1-word-spacing: 1px;
+--h1-margin-top: 30px;
+--h1-margin-bottom: 12px;
+--h2-font-size: 22px;
+--h2-code-font-size: 20px;
+--h2-line-height: 28px;
+--h2-word-spacing: 0.5px;
+--h2-margin-top: 18px;
+--h2-margin-bottom: 6px;
+--ul-indent-size: 23px;
+--ol-indent-size: 19px;
+--ol-li-padding-left: 4px;
+--hr-margin-top: 18px;
+--hr-margin-bottom: calc(var(--line-height) - var(--hr-margin-top) - 1px);
+--extra-wide-scale-factor: 1.5;
+--figcaption-line-height: 21px;
+--figcaption-font-size: 14px;
+--figcaption-code-font-size: 13px;
+--figcaption-gap: 6px;
+--captioned-figure-gap: 10px;
+--table-line-height: 21px;
+--table-font-size: 14px;
+--table-code-font-size: 13px;
+--nav-toc-font-size: 12px;
+--nav-toc-code-font-size: 12px;
+--nav-toc-indent: 15px;
+--nav-toc-baseline-offset: 2px;
+
+--main-width: 745px;
+
+--main-width-narrow: 550px;
+--side-note-max-width: 300px;
+}
+
+*, *:after, *:before {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+-webkit-tap-highlight-color: rgba(0,0,0,0);
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+html {
+
+-webkit-text-size-adjust: 100%;
+}
+body {
+font-family: var(--font-family-prose);
+color: var(--color-text);
+font-size: var(--font-size);
+line-height: var(--line-height);
+-webkit-font-variant-ligatures: no-common-ligatures;
+font-variant-ligatures: no-common-ligatures;
+
+hanging-punctuation: first;
+margin: 0;
+padding: 0;
+padding-top: var(--title-margin-top);
+width: 100%;
+background-color: var(--background-color);
+}
+@media print {
+body {
+background-color: initial;
+}
+}
+
+
+.only-light-mode {
+display: inherit;
+}
+.only-dark-mode {
+display: none;
+}
+@media (prefers-color-scheme: dark) {
+.only-light-mode {
+display: none;
+}
+.only-dark-mode {
+display: inherit;
+}
+}
+
+
+
+.sidenote,
+.marginnote {
+color: var(--color-sidenote);
+font-size: var(--side-note-font-size);
+line-height: var(--side-note-line-height);
+vertical-align: baseline;
+
+margin-top: var(--side-note-baseline-offset);
+}
+.sidenote code,
+.marginnote code {
+color: var(--color-sidenote);
+}
+main {
+counter-reset: sidenote-counter;
+}
+.sidenote-number {
+counter-increment: sidenote-counter;
+}
+.sidenote-number:after,
+.sidenote:before {
+content: counter(sidenote-counter);
+position: relative;
+}
+nav#TOC label,
+label.margin-toggle:not(.sidenote-number),
+.sidenote-number:after,
+.sidenote:before,
+.footnote-ref sup,
+sup {
+font-size: var(--side-note-font-size);
+font-weight: 700;
+font-family: var(--side-note-number-font-family);
+-webkit-font-feature-settings: "tnum" 1;
+font-feature-settings: "tnum" 1;
+
+vertical-align: baseline;
+position: relative;
+top: var(--side-note-sup-offset);
+}
+sup {
+font-weight: inherit;
+}
+
+.sidenote:before { left: var(--side-note-number-hang-left); }
+
+.sidenote { text-indent: var(--side-note-text-indent); }
+
+
+input.margin-toggle {
+display: none;
+}
+label.margin-toggle:not(.sidenote-number) {
+display: none;
+}
+label.sidenote-number {
+display: inline;
+}
+
+@media screen and (max-width: calc(26px + 550px + 26px + 169px + 26px - 1px)) {
+.margin-toggle:checked + .sidenote,
+.margin-toggle:checked + .marginnote {
+margin-top: var(--side-note-line-height);
+vertical-align: baseline;
+}
+label.margin-toggle {
+color: var(--color-link);
+}
+label.margin-toggle:not(.sidenote-number) {
+display: inline;
+}
+label {
+cursor: pointer;
+}
+}
+
+
+
+h1, h2 {
+font-family: var(--font-family-heading);
+font-weight: var(--heading-font-weight);
+}
+h4, h5, h6 {
+font-weight: normal;
+}
+h1.title {
+margin-top: var(--line-height);
+margin-bottom: var(--line-height);
+font-size: var(--title-font-size);
+line-height: var(--title-line-height);
+text-align: center
+}
+h1.title code {
+font-size: var(--title-code-font-size);
+}
+h1:not(.title) {
+font-size: var(--h1-font-size);
+line-height: var(--h1-line-height);
+word-spacing: var(--h1-word-spacing);
+margin-top: var(--h1-margin-top);
+margin-bottom: var(--h1-margin-bottom);
+}
+h1:not(.title) code {
+font-size: var(--h1-code-font-size);
+}
+h2 {
+font-size: var(--h2-font-size);
+line-height: var(--h2-line-height);
+word-spacing: var(--h2-word-spacing);
+margin-top: var(--h2-margin-top);
+margin-bottom: var(--h2-margin-bottom);
+}
+h2 code {
+font-size: var(--h2-code-font-size);
+}
+h3 {
+font-size: var(--font-size);
+line-height: var(--line-height);
+font-weight: bold;
+}
+h1:not(.title) + *, h1:not(.title) + p { margin-top: var(--h1-margin-bottom); }
+h2 + *, h2 + p { margin-top: var(--h2-margin-bottom); }
+h3 + *, h3 + p { margin-top: 0; }
+
+
+p, main > ul, main > ol, div.sourceCode, main > pre, img, table {
+margin-top: var(--line-height);
+margin-bottom: var(--line-height)
+}
+ul:not(.task-list) {
+margin-left: var(--ul-indent-size);
+}
+ol {
+margin-left: var(--ol-indent-size);
+}
+ul.task-list {
+list-style: none;
+margin-left: var(--ul-indent-size);
+}
+ul.task-list > li {
+position: relative;
+}
+ul.task-list > li > input[type="checkbox"] {
+position: absolute;
+left: calc(-1 * var(--ul-indent-size));
+height: var(--line-height);
+}
+ol > li {
+padding-left: var(--ol-li-padding-left);
+}
+ol { list-style-type: decimal; }
+ol ol { list-style-type: lower-alpha; }
+ol ol ol { list-style-type: lower-roman; }
+ol ol ol ol { list-style-type: decimal; }
+ol ol ol ol ol { list-style-type: lower-alpha; }
+ol ol ol ol ol ol { list-style-type: lower-roman; }
+ol ol ol ol ol ol ol { list-style-type: decimal; }
+ol ol ol ol ol ol ol ol { list-style-type: lower-alpha; }
+ol ol ol ol ol ol ol ol ol { list-style-type: lower-roman; }
+ul { list-style-type: disc; }
+ul ul { list-style-type: circle; }
+ul ul ul { list-style-type: square; }
+ul ul ul ul { list-style-type: disc; }
+ul ul ul ul ul { list-style-type: circle; }
+ul ul ul ul ul ul { list-style-type: square; }
+ul ul ul ul ul ul ul { list-style-type: disc; }
+ul ul ul ul ul ul ul ul { list-style-type: circle; }
+ul ul ul ul ul ul ul ul ul { list-style-type: square; }
+blockquote {
+border-left: 1px solid var(--color-text-secondary);
+padding-left: 1.5rem;
+font-style: italic;
+}
+blockquote > p {
+margin-top: 0;
+}
+blockquote em, blockquote i, blockquote .sidenote-wrapper {
+font-style: normal;
+}
+hr {
+margin-top: var(--hr-margin-top);
+margin-bottom: var(--hr-margin-bottom);
+border-style: solid;
+color: var(--color-border-heavy);
+border-width: 1px 0 0;
+}
+a code, a:link code, a:visited code,
+a, a:link, a:visited {
+color: var(--color-link);
+text-decoration: none;
+}
+a:hover {
+text-decoration: underline;
+}
+span.mark, mark {
+
+color: inherit;
+padding: 2px 0 1px;
+}
+span.mark.red, mark.red { background-color: var(--highlight-red); }
+span.mark.yellow, mark.yellow { background-color: var(--highlight-yellow); }
+span.mark.green, mark.green { background-color: var(--highlight-green); }
+span.mark.blue, mark.blue { background-color: var(--highlight-blue); }
+span.mark.purple, mark.purple { background-color: var(--highlight-purple); }
+.subtitle {
+margin-top: 0;
+}
+.author, .date {
+margin-top: 0;
+margin-bottom: 0;
+}
+.signoff {
+margin-top: calc(4 * var(--line-height));
+margin-bottom: calc(4 * var(--line-height));
+text-align: center;
+}
+
+span.smallcaps{ font-variant: small-caps; }
+span.underline{ text-decoration: underline; }
+.katex-display {
+background: var(--background-color);
+transform: translateZ(0px);
+}
+@media print {
+.katex-display {
+background-color: initial;
+}
+}
+
+
+
+code {
+font-family: var(--font-family-code);
+word-spacing: normal;
+
+color: var(--color-inline-code);
+background-color: var(--color-inline-code-bg);
+font-size: var(--inline-code-font-size);
+margin: 0;
+padding: 2px 0 1px;
+border: 1px solid var(--color-border);
+border-radius: 1px;
+}
+.sidenote code,
+.marginnote code {
+font-size: var(--side-note-code-font-size);
+}
+pre code {
+
+color: inherit;
+background-color: inherit;
+font-size: var(--code-block-font-size);
+line-height: var(--line-height);
+margin: initial;
+padding: initial;
+border: initial;
+border-radius: initial;
+}
+pre > code {
+position: relative; 
+display: inline-block;
+min-width: 100%;
+z-index: 1;
+white-space: pre-wrap;
+padding: 0 var(--code-block-side-padding);
+}
+code.sourceCode::selection {
+
+background: transparent;
+}
+.wide > pre, .wide > div.sourceCode {
+
+transform: translateZ(0px);
+}
+.wide pre > code {
+white-space: pre;
+}
+pre.numberSource code {
+counter-reset: source-line 0;
+}
+pre > code.sourceCode > span {
+line-height: var(--line-height);
+display: inline-block;
+min-width: 100%;
+}
+div.sourceCode {
+
+--line-numbers-width: calc(4 * var(--line-numbers-font-size));
+--line-numbers-negative-width: calc(-1 * var(--line-numbers-width));
+margin-left: var(--line-numbers-negative-width);
+}
+div.sourceCode > pre {
+margin-left: var(--line-numbers-width);
+}
+pre.numberSource > code.sourceCode > span {
+counter-increment: source-line;
+padding-left: var(--line-numbers-width);
+text-indent: var(--line-numbers-negative-width);
+position: relative;
+left: var(--line-numbers-negative-width);
+}
+pre.numberSource > code.sourceCode > span > a:first-child::before {
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+content: counter(source-line);
+font-size: var(--line-numbers-font-size);
+text-decoration: none;
+position: relative;
+text-align: right;
+display: inline-block;
+padding: 0 calc(2 * var(--code-block-side-padding));
+width: var(--line-numbers-width);
+}
+pre > code.sourceCode > span > a:first-child::before:hover {
+text-decoration: underline;
+}
+
+.tight-code pre,
+pre.tight-code {
+padding-top: var(--tight-code-padding-top);
+}
+pre.tight-code code,
+.tight-code pre code,
+.tight-code pre > code.sourceCode > span,
+pre.tight-code > code.sourceCode > span {
+line-height: var(--tight-code-line-height);
+}
+
+
+pre > code.sourceCode > span::after {
+position: absolute;
+background-color: var(--color-code-highlight-bg);
+z-index: -1;
+left: calc(var(--line-numbers-width) - var(--code-block-side-padding));
+right: calc(var(--line-numbers-negative-width) - var(--code-block-side-padding));
+top: 0;
+height: 100%;
+}
+pre.hl-1 > code.sourceCode > span:nth-of-type(1)::after { content: ""; }
+pre.hl-2 > code.sourceCode > span:nth-of-type(2)::after { content: ""; }
+pre.hl-3 > code.sourceCode > span:nth-of-type(3)::after { content: ""; }
+pre.hl-4 > code.sourceCode > span:nth-of-type(4)::after { content: ""; }
+pre.hl-5 > code.sourceCode > span:nth-of-type(5)::after { content: ""; }
+pre.hl-6 > code.sourceCode > span:nth-of-type(6)::after { content: ""; }
+pre.hl-7 > code.sourceCode > span:nth-of-type(7)::after { content: ""; }
+pre.hl-8 > code.sourceCode > span:nth-of-type(8)::after { content: ""; }
+pre.hl-9 > code.sourceCode > span:nth-of-type(9)::after { content: ""; }
+pre.hl-10 > code.sourceCode > span:nth-of-type(10)::after { content: ""; }
+pre.hl-11 > code.sourceCode > span:nth-of-type(11)::after { content: ""; }
+pre.hl-12 > code.sourceCode > span:nth-of-type(12)::after { content: ""; }
+pre.hl-13 > code.sourceCode > span:nth-of-type(13)::after { content: ""; }
+pre.hl-14 > code.sourceCode > span:nth-of-type(14)::after { content: ""; }
+pre.hl-15 > code.sourceCode > span:nth-of-type(15)::after { content: ""; }
+pre.hl-16 > code.sourceCode > span:nth-of-type(16)::after { content: ""; }
+pre.hl-17 > code.sourceCode > span:nth-of-type(17)::after { content: ""; }
+pre.hl-18 > code.sourceCode > span:nth-of-type(18)::after { content: ""; }
+pre.hl-19 > code.sourceCode > span:nth-of-type(19)::after { content: ""; }
+pre.hl-20 > code.sourceCode > span:nth-of-type(20)::after { content: ""; }
+pre.hl-21 > code.sourceCode > span:nth-of-type(21)::after { content: ""; }
+pre.hl-22 > code.sourceCode > span:nth-of-type(22)::after { content: ""; }
+pre.hl-23 > code.sourceCode > span:nth-of-type(23)::after { content: ""; }
+pre.hl-24 > code.sourceCode > span:nth-of-type(24)::after { content: ""; }
+pre.hl-25 > code.sourceCode > span:nth-of-type(25)::after { content: ""; }
+pre.hl-26 > code.sourceCode > span:nth-of-type(26)::after { content: ""; }
+pre.hl-27 > code.sourceCode > span:nth-of-type(27)::after { content: ""; }
+pre.hl-28 > code.sourceCode > span:nth-of-type(28)::after { content: ""; }
+pre.hl-29 > code.sourceCode > span:nth-of-type(29)::after { content: ""; }
+pre.hl-30 > code.sourceCode > span:nth-of-type(30)::after { content: ""; }
+pre.hl-31 > code.sourceCode > span:nth-of-type(31)::after { content: ""; }
+pre.hl-32 > code.sourceCode > span:nth-of-type(32)::after { content: ""; }
+pre.hl-33 > code.sourceCode > span:nth-of-type(33)::after { content: ""; }
+pre.hl-34 > code.sourceCode > span:nth-of-type(34)::after { content: ""; }
+pre.hl-35 > code.sourceCode > span:nth-of-type(35)::after { content: ""; }
+pre.hl-36 > code.sourceCode > span:nth-of-type(36)::after { content: ""; }
+pre.hl-37 > code.sourceCode > span:nth-of-type(37)::after { content: ""; }
+pre.hl-38 > code.sourceCode > span:nth-of-type(38)::after { content: ""; }
+pre.hl-39 > code.sourceCode > span:nth-of-type(39)::after { content: ""; }
+pre.hl-40 > code.sourceCode > span:nth-of-type(40)::after { content: ""; }
+
+
+
+
+figure {
+margin-bottom: var(--captioned-figure-gap);
+}
+figure + p {
+margin-top: var(--captioned-figure-gap);
+}
+figure > img, figure > pre, figure > div.sourceCode {
+margin-bottom: var(--figcaption-gap);
+}
+img {
+width: 100%;
+display: block;
+}
+.wide img {
+
+transform: translateZ(0px);
+}
+figcaption {
+font-size: var(--figcaption-font-size);
+line-height: var(--figcaption-line-height);
+font-style: italic;
+text-align: center;
+color: var(--color-text-secondary);
+}
+.left-align-caption figcaption {
+text-align: left;
+}
+figcaption code {
+font-size: var(--figcaption-code-font-size);
+}
+
+
+table {
+-webkit-font-feature-settings: "tnum" 1;
+font-feature-settings: "tnum" 1;
+font-size: var(--table-font-size);
+line-height: var(--table-line-height);
+border-spacing: 0;
+border-collapse: collapse;
+border: 1px solid var(--color-border-heavy);
+width: 100%;
+
+background-color: var(--background-color);
+}
+thead, tbody {
+vertical-align: top;
+}
+td > *:first-child {
+margin-top: 0;
+}
+td > *:last-child {
+margin-bottom: 0;
+}
+@media print {
+table {
+background-color: initial;
+}
+}
+table code {
+font-size: var(--table-code-font-size);
+}
+table pre code {
+font-size: inherit;
+}
+.wide table {
+
+transform: translateZ(0px);
+}
+table td, table th {
+border: 1px solid var(--color-border-heavy);
+padding: 5px 8px;
+min-width: 100px;
+}
+table th {
+background-color: var(--color-table-heading);
+}
+table > caption {
+caption-side: bottom;
+margin-top: var(--figcaption-gap);
+margin-bottom: calc(var(--captioned-figure-gap) - var(--line-height));
+font-size: var(--figcaption-font-size);
+line-height: var(--figcaption-line-height);
+font-style: italic;
+text-align: center;
+color: var(--color-text-secondary);
+}
+.left-align-caption table > caption {
+text-align: left;
+}
+table > caption code {
+font-size: var(--figcaption-code-font-size);
+}
+
+.note table {
+font-size: inherit;
+line-height: inherit;
+}
+.note table, .note td {
+border: none;
+}
+.note.red td { background: var(--highlight-red); }
+.note.yellow td { background: var(--highlight-yellow); }
+.note.green td { background: var(--highlight-green); }
+.note.blue td { background: var(--highlight-blue); }
+.note.purple td { background: var(--highlight-purple); }
+
+
+.date.before-toc {
+padding-bottom: var(--line-height);
+}
+nav#TOC {
+margin-bottom: var(--line-height);
+border-left: 1px solid var(--color-text-secondary);
+padding-left: 1.5rem;
+}
+nav#TOC input {
+display: none;
+}
+nav#TOC label {
+color: var(--color-link);
+cursor: pointer;
+}
+nav#TOC > ul {
+display: none;
+}
+nav#TOC > input:checked + ul {
+display: block;
+}
+@media print {
+nav#TOC > input + ul {
+display: block;
+}
+}
+
+@media screen and (min-width: calc(745px + 2 * (52px + 206px + 52px) - 1px)) {
+header {
+margin-bottom: var(--line-height);
+}
+.date.before-toc {
+padding-bottom: initial;
+}
+nav#TOC {
+
+margin-bottom: initial;
+border-left: initial;
+padding-left: initial;
+position: sticky;
+margin-top: calc(var(--nav-toc-baseline-offset));
+float: left;
+top: var(--line-height);
+font-size: var(--nav-toc-font-size);
+color: var(--color-text-secondary);
+margin-left: var(--line-height);
+max-width: calc((100vw - var(--main-width)) / 2 - 2 * var(--line-height));
+max-height: calc(100vh - 2 * var(--line-height));
+overflow-y: auto;
+}
+nav#TOC label {
+display: none;
+}
+nav#TOC ul {
+display: block;
+list-style: none;
+margin-left: var(--nav-toc-indent);
+}
+nav#TOC > ul {
+margin-left: 0;
+}
+nav#TOC li {
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+nav#TOC code {
+font-size: var(--nav-toc-code-font-size);
+}
+nav#TOC code,
+nav#TOC a,
+nav#TOD a:link,
+nav#TOD a:visited {
+color: var(--color-text-secondary);
+}
+nav#TOC a:hover,
+nav#TOC a:hover code {
+text-decoration: none;
+color: var(--color-link);
+}
+}
+
+
+.sidenote,
+.marginnote {
+float: right;
+clear: right;
+position: relative;
+width: var(--computed-width);
+max-width: var(--side-note-max-width);
+margin-right: calc(-1 * min(var(--computed-width), var(--side-note-max-width)) - var(--margin-left));
+}
+
+
+@media screen and (min-width: calc(745px + 2 * (52px + 206px + 52px))) {
+header,
+main,
+footer {
+max-width: var(--main-width);
+}
+header,
+main,
+footer {
+margin-left: auto;
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+--margin-left: calc(2 * var(--line-height));
+--margin-right: var(--margin-left);
+--computed-width: calc((100vw - 100%) / 2 - var(--margin-right) - var(--margin-left));
+}
+.wide {
+width: 100%;
+overflow-x: auto;
+}
+.wide.extra-wide {
+margin-left: calc((1 - var(--extra-wide-scale-factor)) / 2 * 100%);
+width: calc(var(--extra-wide-scale-factor) * 100%);
+}
+.wide.full-width {
+margin-left: calc(var(--line-height) - ((100vw - var(--main-width)) / 2));
+width: calc(100vw - 2 * var(--line-height));
+}
+.wide.extra-wide figcaption,
+.wide.extra-wide table > caption {
+margin-left: calc(((var(--extra-wide-scale-factor) - 1) / 2) * var(--main-width));
+max-width: var(--main-width);
+margin-right: calc(100% - var(--main-width) - (((var(--extra-wide-scale-factor) - 1) / 2) * var(--main-width)));
+}
+.wide.full-width figcaption,
+.wide.full-width table > caption {
+margin-left: calc((100vw - var(--main-width)) / 2 - var(--line-height));
+max-width: var(--main-width);
+margin-right: calc(100% - var(--main-width) - ((100vw - var(--main-width)) / 2 - var(--line-height)));
+}
+}
+
+
+
+@media screen and (min-width: calc(52px + 745px + 52px + 206px + 52px)) and (max-width: calc(745px + 2 * (52px + 206px + 52px) - 1px)) {
+header,
+nav#TOC,
+main,
+footer {
+margin-left: calc(2 * var(--line-height));
+max-width: var(--main-width);
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+--margin-left: calc(2 * var(--line-height));
+--margin-right: var(--margin-left);
+--computed-width: calc(100vw - var(--main-width) - calc(2 * var(--line-height)) - var(--margin-right) - var(--margin-left));
+}
+.wide {
+width: 100%;
+overflow-x: auto;
+overflow-y: hidden;
+}
+.wide.extra-wide {
+margin-left: calc(-1 * var(--line-height));
+width: calc(100vw - 2 * var(--line-height));
+max-width: calc(var(--extra-wide-scale-factor) * var(--main-width));
+}
+.wide.full-width {
+margin-left: calc(-1 * var(--line-height));
+width: calc(100vw - 2 * var(--line-height));
+max-width: calc(100vw - 2 * var(--line-height));
+}
+.wide.extra-wide .katex-display,
+.wide.full-width .katex-display {
+padding-left: var(--line-height);
+padding-right: var(--line-height);
+}
+.wide.extra-wide .katex-display,
+.wide.extra-wide .katex-display > .katex,
+.wide.full-width .katex-display,
+.wide.full-width .katex-display > .katex {
+text-align: left;
+}
+.wide.extra-wide figcaption,
+.wide.extra-wide table > caption,
+.wide.full-width figcaption,
+.wide.full-width table > caption {
+text-align: left;
+margin-left: var(--line-height);
+max-width: var(--main-width);
+}
+}
+
+
+
+@media screen and (min-width: calc(26px + 550px + 26px + 169px + 26px)) and (max-width: calc(52px + 745px + 52px + 206px + 52px - 1px)) {
+header,
+nav#TOC,
+main,
+footer {
+margin-left: var(--line-height);
+max-width: calc(max(var(--main-width-narrow), 100vw - (3 * var(--line-height)) - var(--side-note-max-width)));
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+--margin-left: var(--line-height);
+--margin-right: var(--line-height);
+--computed-width: calc(100vw - var(--main-width-narrow) - var(--line-height) - var(--margin-right) - var(--margin-left));
+}
+.wide {
+width: var(--main-width);
+overflow-x: auto;
+overflow-y: hidden;
+}
+.wide .katex-display,
+.wide .katex-display > .katex {
+text-align: left;
+}
+.wide figcaption,
+.wide table > caption {
+text-align: left;
+max-width: var(--main-width-narrow);
+}
+.wide.extra-wide,
+.wide.full-width {
+width: calc(100vw - 2 * var(--line-height));
+}
+}
+
+
+
+@media screen and (max-width: calc(26px + 550px + 26px + 169px + 26px - 1px)) {
+header,
+nav#TOC,
+main,
+footer {
+margin-left: var(--line-height);
+margin-right: var(--line-height);
+}
+.sidenote,
+.marginnote {
+display: none;
+}
+.margin-toggle:checked + .sidenote,
+.margin-toggle:checked + .marginnote {
+display: block;
+float: left;
+clear: both;
+width: 100%;
+max-width: 100%;
+}
+.wide {
+width: 100%;
+overflow-x: auto;
+overflow-y: hidden;
+}
+.wide .katex-display,
+.wide .katex-display > .katex {
+text-align: left;
+}
+.wide figcaption,
+.wide table > caption {
+text-align: left;
+max-width: calc(100vw - 2 * var(--line-height));
+}
+}
+
+
+@page {
+size: letter;
+margin: 0.5in;
+
+margin-left: 0.25in;
+}
+@media print {
+:root {
+--line-height: 18px;
+--font-size: 12px;
+--inline-code-font-size: 11px;
+--code-block-font-size: 10px;
+--code-block-side-padding: 6px;
+--line-numbers-font-size: 8.5px;
+--tight-code-line-height: 12.5px;
+--tight-code-padding-top: 2px;
+--side-note-line-height: 14px;
+--side-note-font-size: 9px;
+--side-note-code-font-size: 9px;
+--side-note-baseline-offset: 3px;
+--side-note-sup-offset: -4px;
+--side-note-number-hang-left: -4px;
+--side-note-text-indent: -6.5px;
+--title-font-size: 30px;
+--title-code-font-size: 29px;
+--title-line-height: 37px;
+--title-margin-top: 4px;
+--h1-font-size: 22px;
+--h1-code-font-size: 20px;
+--h1-line-height: 28px;
+--h1-word-spacing: 0.5px;
+--h1-margin-top: 18px;
+--h1-margin-bottom: 6px;
+--h2-font-size: 16.5px;
+--h2-code-font-size: 15px;
+--h2-line-height: 22px;
+--h2-word-spacing: 0px;
+--h2-margin-top: 14px;
+--h2-margin-bottom: 4.5px;
+--ul-indent-size: 18px;
+--ol-indent-size: 14px;
+--hr-margin-top: 14px;
+--figcaption-line-height: 16px;
+--figcaption-font-size: 10px;
+--figcaption-code-font-size: 9.5px;
+--figcaption-gap: 4.5px;
+--captioned-figure-gap: 7.5px;
+--table-line-height: 16px;
+--table-font-size: 10px;
+--table-code-font-size: 9.5px;
+--nav-toc-font-size: 8.5px;
+--nav-toc-code-font-size: 8.5px;
+}
+body {
+padding-top: 0;
+
+padding-left: 0.25in;
+}
+header,
+nav#TOC,
+main,
+footer {
+width: 5.25in;
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+width: 2in;
+margin-right: -2.25in;
+}
+.wide {
+width: 7.5in;
+overflow-x: hidden;
+overflow-y: hidden;
+}
+.wide .katex-display,
+.wide .katex-display > .katex {
+text-align: left;
+}
+.wide figcaption,
+.wide table > caption {
+text-align: left;
+width: 5.25in;
+}
+.wide pre > code {
+white-space: pre-wrap;
+}
+}
+h1, h2, h3 {
+page-break-after: avoid;
+}
+table, figure, pre, img {
+page-break-inside: avoid;
+}
+p code {
+border: 1pt solid #CCC;
+white-space: nowrap;
+
+padding: 2pt 4pt;
+margin-left: 4pt;
+margin-right: 4pt;
+}
+
+
+:root {
+--solarized-base03: #002b36;
+--solarized-base02: #073642;
+--solarized-base01: #586e75;
+--solarized-base00: #657b83;
+--solarized-base0: #839496;
+--solarized-base1: #93a1a1;
+--solarized-base2: #eee8d5;
+--solarized-base3: #fdf6e3;
+--solarized-yellow: #b58900;
+--solarized-orange: #cb4b16;
+--solarized-red: #dc322f;
+--solarized-magenta: #d33682;
+--solarized-violet: #6c71c4;
+--solarized-blue: #268bd2;
+--solarized-cyan: #2aa198;
+--solarized-green: #859900;
+}
+
+pre, pre.numberSource {
+background: var(--solarized-base3);
+
+--color-code-highlight-bg: var(--solarized-base2);
+}
+pre code { color: var(--solarized-base00); }
+pre.numberSource > code.sourceCode > span > a:first-child::before {
+color: var(--solarized-base1);
+}
+code span.kw { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+code span.dt { color: var(--solarized-yellow); font-weight: normal; font-style: normal; } 
+code span.dv { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.bn { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.fl { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.ch { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.st { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.co { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.ot { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code span.al { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.fu { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code span.er { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.wa { color: var(--solarized-orange); font-weight: normal; font-style: italic; } 
+code span.cn { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.sc { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.vs { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.ss { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.im { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.va { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code span.cf { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+code span.op { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+code span.bu { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.ex { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.pp { color: var(--solarized-orange); font-weight: normal; font-style: normal; } 
+code span.at { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.do { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.an { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.cv { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.in { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+a.sourceLine::before { text-decoration: none; }
+
+code.diff span.kw { color: var(--solarized-yellow); font-weight: normal; font-style: normal; } 
+code.diff span.dt { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code.diff span.st { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code.diff span.va { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+</style>
+</head>
+<body>
+
+<header>
+<div style="margin-top: 16px; margin-bottom: 64px; text-align: center">
+  <a href="/">Home</a>
+</div>
+<h1 class="title" style="margin-bottom: 64px">Why is servant a
+type-level DSL?</h1>
+<blockquote class="metadata">
+</blockquote>
+</header>
+
+<nav id="TOC" role="doc-toc">
+    <strong>Contents</strong><label for="contents">⊕</label>
+  <input type="checkbox" id="contents">
+  <ul>
+  <li><a href="#it-all-started-with-a-problem" id="toc-it-all-started-with-a-problem">It all started with a
+  problem</a></li>
+  <li><a href="#a-first-non-modular-attempt" id="toc-a-first-non-modular-attempt">A first, non-modular
+  attempt</a></li>
+  <li><a href="#the-expression-problem" id="toc-the-expression-problem">The Expression Problem</a></li>
+  <li><a href="#a-first-modular-attempt" id="toc-a-first-modular-attempt">A first modular attempt</a></li>
+  <li><a href="#servants-approach-simplified" id="toc-servants-approach-simplified">Servant’s approach
+  (simplified)</a></li>
+  <li><a href="#conclusion" id="toc-conclusion">Conclusion</a></li>
+  <li><a href="#going-further" id="toc-going-further">Going
+  further</a></li>
+  </ul>
+</nav>
+
+<main>
+<p>This post is an attempt at explaining servant’s design as an embedded
+domain specific language, and particularly why it <em>had to</em> be a
+<em>type-level</em> domain specific language, given our requirements.
+Along the way, we will discuss approaches for designing extensible EDSLs
+in Haskell and see why other simpler approaches just can’t meet the said
+requirements.</p>
+<h1 id="it-all-started-with-a-problem">It all started with a
+problem</h1>
+<p>Back in 2014, Sönke Hahn, Julian Arni and myself were working
+together in “the Haskell team” at Zalora on all sorts of projects. Many
+of them involved serving web applications, querying external APIs or our
+own services from Haskell, PHP, JS and probably a few other languages.
+At the time, we were using a few of the well established “web
+frameworks”, among which <code>scotty</code>, whenever we had to offer
+some service over HTTP.</p>
+<p>However, writing all those functions for hitting our own webservices
+was a lot of manual, error-prone, tedious work. The bigger web
+applications got, the more tedious it became. And it had to be done once
+per language in which we wanted to hit the application. This could not
+continue.</p>
+<p>For reference, this is what a simple scotty application looks
+like:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ot">{-# LANGUAGE OverloadedStrings #-}</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Data.Text</span> (split)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">import</span> <span class="dt">Web.Scotty</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="ot">main ::</span> <span class="dt">IO</span> ()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>main <span class="ot">=</span> scotty <span class="dv">8000</span> <span class="op">$</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  get <span class="st">&quot;/repeat/:n&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> param <span class="st">&quot;n&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    json (<span class="fu">replicate</span> n n)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  post <span class="st">&quot;/message&quot;</span> <span class="op">$</span> <span class="kw">do</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    msg <span class="ot">&lt;-</span> jsonData</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    json (split <span class="st">&quot;\n&quot;</span> msg)</span></code></pre></div>
+<p>How could we somewhat automate the creation of one client function
+per endpoint of the web application? In an ideal world, we would just
+show this application to some program or library and it would collect
+all the data it needs about the overall structure of the application
+from the code itself, in order to produce 2 client functions:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Client for the first endpoint.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">--</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- The Int is the value you want to set &quot;:n&quot; to (/repeat/23, /repeat/10, ...).</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">getRepeat ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">ClientMonad</span> [<span class="dt">Int</span>]</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- Client for the second endpoint.</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">--</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- The JSON body (just a naked string) to send is the Text argument.</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="ot">postMessage ::</span> <span class="dt">Text</span> <span class="ot">-&gt;</span> <span class="dt">ClientMonad</span> [<span class="dt">Text</span>]</span></code></pre></div>
+<p>which would do all the hard work of preparing an HTTP request for us,
+even taking care of JSON encoding and decoding for us. But… the entire
+structure of the application is just hidden in the <code>do</code> block
+and we just cannot programmatically access it.</p>
+<p>So… this is not realistically doable. We clearly <em>need</em> to
+change (a little bit? a lot?) the way we write our applications, making
+sure we get a description of the web’s application structure (the
+endpoints, the part of the request they use or depend on, what they
+return) that we could then hand over to <em>something</em>, which would
+get us our client functions.</p>
+<p>We will now try implementating such a web application description DSL
+in the most straightforward way possible.</p>
+<p><em>Note:</em> We could define a DSL with an interpreter that spits
+out Haskell code for us (through Template Haskell or another mechanism).
+The result would be typed, but the <em>process</em> would not be. The
+translation from the DSL to the result would be untyped code, therefore
+easy to get wrong. As Haskell programmers, we prefer static type
+checking where possible. This therefore excludes Template Haskell and
+other code generation mechanisms.</p>
+<h1 id="a-first-non-modular-attempt">A first, non-modular attempt</h1>
+<p>We want to produce client functions that look like the ones above,
+that prepare and send HTTP requests for us by taking some pieces of data
+given as arguments to those functions and encoding then storing them in
+the right places of the request (request path for URL captures, request
+body, headers, etc). Let’s perhaps start simple with a data type for
+describing an endpoint that can be served under some path (which can
+contain static string fragments and captures), for a given http method,
+ignoring everything else for now.</p>
+<p>It could look like this:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Method</span> <span class="ot">=</span> <span class="dt">Get</span> <span class="op">|</span> <span class="dt">Post</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Endpoint</span> <span class="ot">=</span> <span class="dt">Static</span> <span class="dt">String</span> <span class="dt">Endpoint</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Capture</span> <span class="dt">Endpoint</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>              <span class="op">|</span> <span class="dt">Verb</span> <span class="dt">Method</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- GET /hello/:name</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="ot">getHello ::</span> <span class="dt">Endpoint</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>getHello <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> (<span class="dt">Capture</span> (<span class="dt">Verb</span> <span class="dt">Get</span>))</span></code></pre></div>
+<p>and, if we want it to look a little more “servant-y”, we can
+define:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">infixr</span> <span class="dv">5</span> <span class="op">:&gt;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">(:&gt;) ::</span> (<span class="dt">Endpoint</span> <span class="ot">-&gt;</span> <span class="dt">Endpoint</span>) <span class="ot">-&gt;</span> <span class="dt">Endpoint</span> <span class="ot">-&gt;</span> <span class="dt">Endpoint</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>f <span class="op">:&gt;</span> x <span class="ot">=</span> f x</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ot">getHelloNew ::</span> <span class="dt">Endpoint</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>getHelloNew <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Get</span></span></code></pre></div>
+<p>Unlike servant though, as you can see with the type of
+<code>getHello</code> and <code>getHelloNew</code>, our descriptions are
+good old Haskell values, both of the <code>Endpoint</code> type.</p>
+<p>Given those few definitions, how could we go about, say, generating
+links to endpoints? Well, here is a straightforward attempt.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- a link here is just a list of path components</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- (we ignore query parameters in this post)</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Link</span> <span class="ot">=</span> [<span class="dt">String</span>]</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="ot">linkTo ::</span> <span class="dt">Endpoint</span> <span class="ot">-&gt;</span> <span class="dt">Link</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Static</span> str rest) <span class="ot">=</span> str <span class="op">:</span> linkTo rest</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Verb</span> _method)    <span class="ot">=</span> []</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Capture</span> rest)    <span class="ot">=</span> <span class="op">???</span> <span class="op">:</span> linkTo rest</span></code></pre></div>
+<p>But… what should we put in place of those <code>???</code>, if
+anything?</p>
+<p>Well, we definitely want to add <em>some</em> path component, to fill
+the <code>Capture</code> slot. However, by definition, a captured path
+fragment is not fixed, it is allowed to vary. In other words,
+<code>Capture :&gt; Verb Post</code> matches both <code>POST /x</code>
+and <code>POST /y</code>. We cannot just pick one value and hope that it
+is the one the user wanted. We need to take it as an argument. But what
+about <code>Capture :&gt; Capture :&gt; Verb Post</code>? We would need
+our <code>linkTo</code> function to take 2 arguments for that case. And
+zero additional argument for
+<code>Static &quot;hello&quot; :&gt; Verb Post</code>. This is quite
+problematic.</p>
+<p>Indeed, we would like the type of <code>linkTo</code> to be
+<code>Endpoint -&gt; Link</code>,
+<code>Endpoint -&gt; String -&gt; Link</code>,
+<code>Endpoint -&gt; String -&gt; String -&gt; Link</code> and so on
+depending on what the <code>Endpoint</code> argument is. In other words,
+we want the return type of <code>linkTo</code> (when really seen as a
+function of one argument, which it is anyway) to depend on the value of
+type <code>Endpoint</code> it gets as input. That is, we want a type
+that depends on a value, i.e dependent types.</p>
+<p>The alternative would be:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- linkTo assumes that the capture values are given in the same order as we want</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- them to appear in the url.</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="ot">linkTo ::</span> <span class="dt">Endpoint</span> <span class="ot">-&gt;</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">Link</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Static</span> str rest) captureValues  <span class="ot">=</span> str <span class="op">:</span> linkTo rest captureValues</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- when there is at least one value left in the list, we use it.</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">-- when there isn&#39;t... we error out.</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Capture</span> rest)    (c <span class="op">:</span> cs)       <span class="ot">=</span> c   <span class="op">:</span> linkTo rest cs</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Capture</span> rest)    []             <span class="ot">=</span> <span class="fu">error</span> <span class="st">&quot;linkTo: capture value needed but the list is empty&quot;</span> <span class="co">-- :-(</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>linkTo (<span class="dt">Verb</span> method)     _              <span class="ot">=</span> []</span></code></pre></div>
+<p>This solution is very unsatisfactory, first and foremost because it
+is possible for it to error out if we don’t supply the right number of
+captures. However, it will also silently let us pass too many capture
+values without telling us that some of them are not used. Such a
+function should be total, we really don’t want an implementation that
+can let us down if we’re not very careful.</p>
+<p>Fortunately, <a href="https://en.wikibooks.org/wiki/Haskell/GADT">GADTs</a> can help
+here. We could turn <code>Endpoint</code> into a GADT that tracks
+captures and then use some type-level computations to get the type of
+the link-making function from our list of captures, as well as define
+the link making function through typeclass instances that would go
+through the captures and add an argument for each of them. Request
+bodies, query parameters, headers? We could probably track them too, in
+a similar way. Or we could unify it all by basically building up and
+tracking actual servant API types through a <code>GADT</code> version of
+Endpoint’s type argument, and do some of what servant does at the
+type-level, with everything else at the value-level.</p>
+<p>However, all those approaches have a big problem. Once you’ve made a
+decision, it is set in stone, in a way. Indeed, in all these approaches,
+if you want to extend your web app description language, you need to add
+a new constructor to your <code>Endpoint</code> type. You then need to
+handle this new constructor in all the functions that pattern match on
+<code>Endpoint</code> constructors since they’ve instantly become
+partial. Not to mention that just the act of adding a constructor
+requires rebuilding the entire library. You cannot explore two different
+directions simultaneously without breaking code, you cannot add new
+constructs you hadn’t thought of without touching the library, e.g just
+locally in a project of yours. Extensibility and modularity were central
+requirements as we had been bitten by the lack of them in libraries that
+we were using at the time.</p>
+<p>Note that a GADT-based approach would work well (in addition to being
+more approachable) for very stable domains, and is not considered here
+because of the kind of flexibility we are asking for.</p>
+<p>So… how do people build extensible/modular DSLs in Haskell? The next
+section talks about the general problem behind this and a solution that
+I read about that gets us halfway to servant.</p>
+<h1 id="the-expression-problem">The Expression Problem</h1>
+<p>To quote <a href="http://homepages.inf.ed.ac.uk/wadler/papers/expression/expression.txt">Phil
+Wadler</a>: “<em>the expression problem is a new name for an old
+problem. The goal is to define a datatype by cases, where one can add
+new cases to the datatype and new functions over the datatype, without
+recompiling existing code, and while retaining static type safety (e.g.,
+no casts)</em>”.</p>
+<p>In Haskell, the standard approach to representing some domain is to
+define an algebraic data type for it. For a simple type of expressions
+with additions and integers, we usually do:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">I</span> <span class="dt">Integer</span> <span class="op">|</span> <span class="dt">Add</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span></code></pre></div>
+<p>and proceed to write what we call “interpreters”, which in this case
+are just functions that take expressions as input and do something
+interesting with them.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="ot">eval ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Integer</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">I</span> n)     <span class="ot">=</span> n</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>eval (<span class="dt">Add</span> a b) <span class="ot">=</span> eval a <span class="op">+</span> eval b</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="ot">prettyPrint ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>prettyPrint (<span class="dt">I</span> n) <span class="ot">=</span> <span class="fu">show</span> n</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>prettyPrint (<span class="dt">Add</span> a b) <span class="ot">=</span> <span class="fu">unwords</span> [prettyPrint a, <span class="st">&quot;+&quot;</span>, prettyPrint b]</span></code></pre></div>
+<p>So, given an expression type, we can easily “add new functions over
+the data type”, to reuse Phil’s wording. We just write a new function.
+However, when the time comes to “add new cases to the data type”, this
+approach becomes painful. A “new case” here means a new constructor for
+our <code>Expr</code> data type. Let’s say we want to support
+multiplications too:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Expr</span> <span class="ot">=</span> <span class="dt">I</span> <span class="dt">Integer</span> <span class="op">|</span> <span class="dt">Add</span> <span class="dt">Expr</span> <span class="dt">Expr</span> <span class="op">|</span> <span class="dt">Mul</span> <span class="dt">Expr</span> <span class="dt">Expr</span></span></code></pre></div>
+<p>Now, we have to modify <em>every single function that patterns
+matches on an <code>Expr</code></em> to handle the <code>Mul</code>
+constructor, including our <code>eval</code> and
+<code>prettyPrint</code> “interpreters”. For any non-trivial domain,
+this becomes <em>very</em> painful, <em>very</em> quickly. Fine, so what
+other options are there?</p>
+<p><a href="https://userpages.uni-koblenz.de/~laemmel/TheEagle/resources/pdf/xproblem1.pdf">Ralf
+Lämmel’s slides</a> on the topic have been of a great help for me, back
+when we were looking for a solution suitable to our needs. With Oleg
+Kiselyov, they show how we can reasonably easily (that is, in Haskell
+98) achieve full extensibility in both directions (constructors and
+interpretations) in Haskell. It boils down to:</p>
+<ul>
+<li>Turn what would be a constructor into its own little data type.</li>
+<li>Turn what would be a simple function that operates on the data type
+into a typeclass with a method.</li>
+<li>Write instances of those typeclasses for the data types representing
+the DSL’s constructs.</li>
+</ul>
+<p>This effectively means that we won’t have a single type to represent
+all the valid “endpoint descriptions”. Instead, with this approach, we
+will be able to process any “reasonable” combination of “endpoint
+components”. The <code>Expr</code> typeclass below is exactly what lets
+us say what is a valid endpoint description and what isn’t. Using their
+approach for our expressions would look like this:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- our expression constructs, one data type per</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- constructor we had previously.</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">-- integer constants</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">I</span> <span class="ot">=</span> <span class="dt">I</span> <span class="dt">Integer</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- Since we don&#39;t have an &#39;Expr&#39; type anymore, to use as a type for</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- the fields of Add, we just make them type parameters. Sometimes</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- &#39;l&#39; and &#39;r&#39; might be I, some other times they might be &#39;Add I I&#39;,</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- or &#39;Add (Add I I) I&#39;, and so on. The type reflects the recursive</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- structure.</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Add</span> l r <span class="ot">=</span> <span class="dt">Add</span> l r</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co">-- an &quot;open union&quot; to be able to describe all the</span></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a><span class="co">-- valid expression types.</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Expr</span> a</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Expr</span> <span class="dt">I</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Expr</span> l, <span class="dt">Expr</span> r) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Add</span> l r)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="co">-- our first interpretation, evaluation</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Expr</span> a <span class="ot">=&gt;</span> <span class="dt">Eval</span> a <span class="kw">where</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="ot">  eval ::</span> a <span class="ot">-&gt;</span> <span class="dt">Integer</span></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a><span class="co">-- evaluating a constant amounts to returning it</span></span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Eval</span> <span class="dt">I</span> <span class="kw">where</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  eval (<span class="dt">I</span> n) <span class="ot">=</span> n</span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a><span class="co">-- if we know how to evaluate two things, we know how to evaluate</span></span>
+<span id="cb10-29"><a href="#cb10-29" aria-hidden="true" tabindex="-1"></a><span class="co">-- their addition</span></span>
+<span id="cb10-30"><a href="#cb10-30" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Eval</span> l, <span class="dt">Eval</span> r) <span class="ot">=&gt;</span> <span class="dt">Eval</span> (<span class="dt">Add</span> l r) <span class="kw">where</span></span>
+<span id="cb10-31"><a href="#cb10-31" aria-hidden="true" tabindex="-1"></a>  eval (<span class="dt">Add</span> a b) <span class="ot">=</span> eval a <span class="op">+</span> eval b</span>
+<span id="cb10-32"><a href="#cb10-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-33"><a href="#cb10-33" aria-hidden="true" tabindex="-1"></a><span class="co">-- our second interpretation, pretty printing</span></span>
+<span id="cb10-34"><a href="#cb10-34" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Expr</span> a <span class="ot">=&gt;</span> <span class="dt">Pretty</span> a <span class="kw">where</span></span>
+<span id="cb10-35"><a href="#cb10-35" aria-hidden="true" tabindex="-1"></a><span class="ot">  pretty ::</span> a <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb10-36"><a href="#cb10-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-37"><a href="#cb10-37" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Pretty</span> <span class="dt">I</span> <span class="kw">where</span></span>
+<span id="cb10-38"><a href="#cb10-38" aria-hidden="true" tabindex="-1"></a>  pretty (<span class="dt">I</span> n) <span class="ot">=</span> <span class="fu">show</span> n</span>
+<span id="cb10-39"><a href="#cb10-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-40"><a href="#cb10-40" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Pretty</span> l, <span class="dt">Pretty</span> r) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Add</span> l r) <span class="kw">where</span></span>
+<span id="cb10-41"><a href="#cb10-41" aria-hidden="true" tabindex="-1"></a>  pretty (<span class="dt">Add</span> a b) <span class="ot">=</span> <span class="fu">unwords</span> [pretty a, <span class="st">&quot;+&quot;</span>, pretty b]</span></code></pre></div>
+<p>Every constructor that we had in our previous <code>Expr</code> data
+type is now turned into its own little type, and every interpretation
+becomes a type class that all those little types are then free to
+provide an instance for. In fact, we do not necessarily have to supply
+an instance of each interpretation for all of our constructs. If we try
+to interpret an expression that uses a construct not supported by this
+interpretation, we get a type error! This is much better than calling
+<code>error</code> in some corner cases that should in theory not be
+reached… In theory. Right.</p>
+<p>Anyway, if we now want to add support for multiplications, we can
+do:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Mul</span> l r <span class="ot">=</span> <span class="dt">Mul</span> l r</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Expr</span> l, <span class="dt">Expr</span> r) <span class="ot">=&gt;</span> <span class="dt">Expr</span> (<span class="dt">Mul</span> l r)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Eval</span> l, <span class="dt">Eval</span> r) <span class="ot">=&gt;</span> <span class="dt">Eval</span> (<span class="dt">Mul</span> l r) <span class="kw">where</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  eval (<span class="dt">Mul</span> a b) <span class="ot">=</span> eval a <span class="op">*</span> eval b</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Pretty</span> l, <span class="dt">Pretty</span> r) <span class="ot">=&gt;</span> <span class="dt">Pretty</span> (<span class="dt">Mul</span> l r) <span class="kw">where</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  pretty (<span class="dt">Mul</span> a b) <span class="ot">=</span> <span class="fu">unwords</span> [autoParens a, <span class="st">&quot;*&quot;</span>, autoParens b]</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span> autoParens a<span class="op">@</span>(<span class="dt">Add</span> _ _) <span class="ot">=</span> <span class="st">&quot;(&quot;</span> <span class="op">++</span> pretty a <span class="op">++</span> <span class="st">&quot;)&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>          autoParens           a <span class="ot">=</span> pretty a</span></code></pre></div>
+<p>We didn’t have to change any existing function, that’s great! Let’s
+apply this approach to a very simplified web application description
+“language” that we could make out of tiny building blocks (static path
+fragments, captures, etc).</p>
+<h1 id="a-first-modular-attempt">A first modular attempt</h1>
+<p>Adapting the approach from the previous section to our domain, we can
+give a shot at decomposing the kind of information we want to represent
+into a few different “constructs” (i.e data types).</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- static path fragments</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Static</span> <span class="ot">=</span> <span class="dt">Static</span> <span class="dt">String</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- variable path fragments (&quot;captures&quot;)</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Capture</span> <span class="ot">=</span> <span class="dt">Capture</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co">-- HTTP method</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Method</span> <span class="ot">=</span> <span class="dt">Get</span> <span class="op">|</span> <span class="dt">Post</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- Leaf of a chain of :&gt;&#39;s, specifies the HTTP method</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Verb</span> <span class="ot">=</span> <span class="dt">Verb</span> <span class="dt">Method</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- chain a few &quot;endpoint components&quot; with this operator,</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- all chains must be terminated with a &#39;Verb&#39; component.</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="kw">infixr</span> <span class="dv">5</span> <span class="op">:&gt;</span></span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> a <span class="op">:&gt;</span> b <span class="ot">=</span> a <span class="op">:&gt;</span> b</span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a><span class="co">-- a class to specify all the valid endpoint descriptions</span></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">Endpoint</span> a</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a><span class="co">-- Verb alone is one.</span></span>
+<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Endpoint</span> <span class="dt">Verb</span></span>
+<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a><span class="co">-- if we have a valid description, sticking &#39;Static :&gt;&#39; in front of it</span></span>
+<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="co">-- yields another valid description.</span></span>
+<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Endpoint</span> rest <span class="ot">=&gt;</span> <span class="dt">Endpoint</span> (<span class="dt">Static</span> <span class="op">:&gt;</span> rest)</span>
+<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="co">-- if we have a valid description, sticking &#39;Capture :&gt;&#39; in front of it</span></span>
+<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a><span class="co">-- yields another valid description.</span></span>
+<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">Endpoint</span> rest <span class="ot">=&gt;</span> <span class="dt">Endpoint</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> rest)</span>
+<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a><span class="co">-- GET /hello</span></span>
+<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>endpoint1 <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Get</span></span></code></pre></div>
+<p>OK, why not. Let’s now try to write an interpretation for generating
+links to endpoints like the one above. This is a lot simpler and
+self-contained than investigating client generation or server-side
+routing, while retaining many of the difficulties. The main one is that
+depending on what we find in the description of the endpoint, we need
+the type of the link-generating function to change: indeed, if we
+encounter <code>Capture</code>s, then the user has to supply values for
+them. We will let the user do that through one additional argument per
+Capture we encounter.</p>
+<p>Let’s start with something really simple.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Link</span> <span class="ot">=</span> [<span class="dt">String</span>]</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- @renderLink [&quot;hello&quot;, &quot;world&quot;] == &quot;/hello/world&quot;@</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="ot">renderLink ::</span> <span class="dt">Link</span> <span class="ot">-&gt;</span> <span class="dt">String</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>renderLink xs <span class="ot">=</span> <span class="ch">&#39;/&#39;</span> <span class="op">:</span> intercalate <span class="st">&quot;/&quot;</span> xs</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">HasLink</span> endpoint <span class="kw">where</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- return the path components</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="ot">  link ::</span> endpoint <span class="ot">-&gt;</span> [<span class="dt">String</span>]</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  link (<span class="dt">Static</span> s <span class="op">:&gt;</span> api) <span class="ot">=</span> s <span class="op">:</span> link api</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  link (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="ot">=</span> <span class="op">???</span> <span class="op">:</span> link api</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> <span class="dt">Verb</span> <span class="kw">where</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  link _ <span class="ot">=</span> []</span></code></pre></div>
+<p>We should be appending something in place of those <code>???</code>
+there. But since <code>Capture</code> represents variable path fragments
+(like <code>:userid</code> in <code>/user/:userid</code>, in many web
+frameworks), we do not want to pick a fixed string, we would like for
+this string to be supplied by the caller of <code>link</code>, as stated
+above. Let’s introduce a slightly fancier <code>HasLink</code> class to
+make it seemingly “variadic”.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">HasLink</span> endpoint <span class="kw">where</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span><span class="ot"> endpoint ::</span> <span class="dt">Type</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  link ::</span> endpoint <span class="ot">-&gt;</span> <span class="dt">LinkType</span> endpoint</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> <span class="dt">Verb</span> <span class="kw">where</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> <span class="dt">Verb</span> <span class="ot">=</span> <span class="dt">Link</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>  link _ <span class="ot">=</span> []</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Static</span> <span class="op">:&gt;</span> api) <span class="ot">=</span> <span class="dt">LinkType</span> api</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  link (<span class="dt">Static</span> s <span class="op">:&gt;</span> api) <span class="ot">=</span> s <span class="op">:</span> link api</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- HERE! we introduce a String argument</span></span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="ot">=</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- we expand the type of link:</span></span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- link :: (Capture :&gt; api) -&gt; String -&gt; LinkType api</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- we see that our little `LinkType` trick there allows</span></span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- link to receive arguments when appropriate</span></span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  link (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) captureValue <span class="ot">=</span> captureValue <span class="op">:</span> link api</span></code></pre></div>
+<p>Looks good. Except that this does not typecheck. The problem is with
+the <code>Capture :&gt; api</code> and <code>Static :&gt; api</code>
+instances. While we know that the <code>link</code> function will
+eventually return a <code>Link</code>, once given arguments for all the
+<code>Capture</code>s, we don’t know whether there is another
+<code>Capture</code> later in <code>api</code>. If there is, then
+<code>link api</code> would have type e.g
+<code>String -&gt; Link</code>, and we cannot cons a <code>String</code>
+on top of… a function.</p>
+<p>We have to be a little smarter and accumulate the path components as
+we go without building up the final list directly. We will be
+accumulating the path components in reverse order, to make the
+accumulation efficient, and reverse the whole list at the end to give
+the final <code>Link</code> (<code>= [String]</code>) value.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ot">link ::</span> <span class="dt">HasLink</span> endpoint <span class="ot">=&gt;</span> endpoint <span class="ot">-&gt;</span> <span class="dt">LinkType</span> endpoint</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>link e <span class="ot">=</span> link&#39; e []</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">HasLink</span> endpoint <span class="kw">where</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span><span class="ot"> endpoint ::</span> <span class="dt">Type</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  link&#39; ::</span> endpoint <span class="ot">-&gt;</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">LinkType</span> endpoint</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> <span class="dt">Verb</span> <span class="kw">where</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> <span class="dt">Verb</span> <span class="ot">=</span> <span class="dt">Link</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  link&#39; _ acc <span class="ot">=</span> <span class="fu">reverse</span> acc</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Static</span> <span class="op">:&gt;</span> api) <span class="ot">=</span> <span class="dt">LinkType</span> api</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  link&#39; (<span class="dt">Static</span> s <span class="op">:&gt;</span> api) acc <span class="ot">=</span> link&#39; api (s <span class="op">:</span> acc)</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- we stick the static path fragment at the top of the list,</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- so that it appears after the rest when we reverse the list,</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- in the Verb instance.</span></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> api <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="ot">=</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  link&#39; (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) acc captureValue <span class="ot">=</span></span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    link&#39; api (captureValue <span class="op">:</span> acc)</span></code></pre></div>
+<p>We can finally generate links with the new approach:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- &quot;/hello&quot;</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>simpleEndpointLink <span class="ot">=</span> renderLink (link endpoint1)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>endpoint2 <span class="ot">=</span> <span class="dt">Capture</span> <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Post</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="ot">linkFun2 ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Link</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>linkFun2 <span class="ot">=</span> link endpoint2</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>link2a <span class="ot">=</span> renderLink (linkFun2 <span class="st">&quot;foo&quot;</span>) <span class="co">-- &quot;/foo&quot;</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>link2b <span class="ot">=</span> renderLink (linkFun2 <span class="st">&quot;bar&quot;</span>) <span class="co">-- &quot;/bar&quot;</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>endpoint3 <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Get</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>link3 <span class="ot">=</span> renderLink (link endpoint3 <span class="st">&quot;x&quot;</span> <span class="st">&quot;y&quot;</span>) <span class="co">-- &quot;/hello/x/y&quot;</span></span></code></pre></div>
+<p>This looks promising. Let’s now try to introduce some more types
+here, by allowing captures to not be specified just as simple strings,
+but any <code>Show</code>able type (this is terrible, but simple enough
+for this post). We need to modify <code>Capture</code> to track that
+<code>Show</code>able type we will use to specify the value of that path
+fragment.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Capture</span> a <span class="ot">=</span> <span class="dt">Capture</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Show</span> a, <span class="dt">HasLink</span> api) <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> a <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- HERE! we introduce an argument of type &#39;a&#39;</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) <span class="ot">=</span> a <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  link&#39; (<span class="dt">Capture</span> <span class="op">:&gt;</span> api) acc captureValue <span class="ot">=</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    link&#39; api (<span class="fu">show</span> captureValue <span class="op">:</span> acc)</span></code></pre></div>
+<p>We unfortunately cannot just “track” some type by storing it in a
+field (which is different from storing <em>a value of that type</em>).
+Instead we make <code>Capture</code> a clone of <code>Proxy</code> (from
+<code>Data.Proxy</code>) and just carry around a phantom type parameter.
+This is a little inconvenient as we will <em>have to</em> type annotate
+<em>all</em> <code>Capture</code>s (or use the
+<code>TypeApplications</code> language extension), but let’s roll with
+this approach for now.</p>
+<p>Let’s now see an endpoint description using this variant of
+<code>Capture</code>.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>endpoint4  <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="op">:&gt;</span> (<span class="dt">Capture</span><span class="ot"> ::</span> <span class="dt">Capture</span> <span class="dt">Int</span>) <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Post</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- or, with TypeApplications:</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>endpoint4&#39; <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="op">:&gt;</span> (<span class="dt">Capture</span> <span class="op">@</span><span class="dt">Int</span>) <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">Post</span></span></code></pre></div>
+<p>OK, interesting, why not. It does look a little bit ugly. It would
+look even uglier if we included the response type in <code>Verb</code>,
+turning it into <code>data Verb a = Verb Method</code> which would
+require the same kind of type annotations. And the same problem would
+manifest itself if we were to add all the similar types from servant
+(<code>ReqBody</code>, <code>QueryParam</code>, <code>Header</code>,
+etc). This is quite disappointing.</p>
+<p>Unrelatedly, have you noticed that I have not given the type of any
+of our endpoint descriptions so far? This is on purpose, because those
+types are a little bit fancy. Fortunately, they should look
+familiar:</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="ot">endpoint1 ::</span> <span class="dt">Static</span> <span class="op">:&gt;</span> <span class="dt">Verb</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ot">endpoint2 ::</span> <span class="dt">Capture</span> <span class="dt">String</span> <span class="op">:&gt;</span> <span class="dt">Verb</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="ot">endpoint3 ::</span> <span class="dt">Static</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="dt">String</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="dt">String</span> <span class="op">:&gt;</span> <span class="dt">Verb</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="ot">endpoint4 ::</span> <span class="dt">Static</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="dt">Int</span> <span class="op">:&gt;</span> <span class="dt">Verb</span></span></code></pre></div>
+<p>That’s right, not only do the descriptions (which are good old
+haskell values) look like servant’s API types, but their types too! We
+can see that we are only “hiding” the strings (in static path fragments)
+and the HTTP method (in verbs) from the type-level.</p>
+<p>Most of the other bits of information we would want to see in API
+descriptions will also have to be reflected at the type-level. When we
+consider content types for example, we have no choice but to keep track
+of them at the type level too, even with this design. Because we need to
+make sure suitable encoding/decoding instances are available for the
+types that will be represented with those MIME types, and this cannot be
+done when discovering <code>&quot;application/json&quot;</code> in a list
+somewhere, at runtime.</p>
+<p>All in all, there is no value in keeping anything at the value level
+at this point. And we are already traversing a bunch of types mixed
+together with funny symbols and computing the type of a link making
+function as we go, as evidenced by the <code>HasLink</code> instances
+from above, so we’ve already got one foot in type-level land.</p>
+<p>An important tradeoff that we are making here is that while putting
+more information at the type-level indeed makes things more complex, it
+does however give a chance to our descriptions to influence more things,
+including other types. This is noticeable in the last
+<code>HasLink</code> instance we wrote, where making
+<code>Capture</code> track the type the url fragment is going to be
+decoded to allowed us to directly make the link-making function take a
+value of that type, instead of a string. This is strictly more powerful
+and will allow us to work in a very strongly typed world and where the
+typechecker “writes” a whole lot of code for us.</p>
+<p>Let’s bite the bullet and finally take a quick look at what servant’s
+type-level approach looks like.</p>
+<h1 id="servants-approach-simplified">Servant’s approach
+(simplified)</h1>
+<p>First, let me emphasize that any of the designs we have considered so
+far are interesting on their own and are fruitful in different ways.
+They were not quite good enough to meet our requirements which were,
+again, dictated by the projects and needs we had at work. This whole
+project started because we were sick of getting things wrong when
+manually constructing (client) or deconstructing (server) HTTP requests
+and so on.</p>
+<p>Now, let’s write our type-level DSL. If you want a longer version of
+just this section, with more explanations, you may want to read <a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing
+a minimal version of servant</a>.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- GHC-flavoured Haskell supports type-level strings, they are the only type-level</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co">-- entity to have kind Symbol. We will therefore just use those,</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co">-- wrapped with &#39;Static&#39;. See the first link in the &quot;Going further&quot;</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- section if you&#39;re not familiar with type-level strings, kinds, etc.</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Static</span> (<span class="ot">str ::</span> <span class="dt">Symbol</span>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Capture</span> (<span class="ot">a ::</span> <span class="dt">Type</span>)</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a><span class="co">-- GHC-flavoured Haskell (with the DataKinds extension) supports promoting ordinary data types</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co">-- to kinds and their constructors to types of those kinds. See again the</span></span>
+<span id="cb20-10"><a href="#cb20-10" aria-hidden="true" tabindex="-1"></a><span class="co">-- first link in the &quot;Going further&quot; section if this is new to you.</span></span>
+<span id="cb20-11"><a href="#cb20-11" aria-hidden="true" tabindex="-1"></a><span class="co">-- In our example, this lets us parametrize Verb not by an ordinary type but by</span></span>
+<span id="cb20-12"><a href="#cb20-12" aria-hidden="true" tabindex="-1"></a><span class="co">-- a constructor of &#39;Method&#39;. Indeed, &#39;method&#39; can only be instantiated to</span></span>
+<span id="cb20-13"><a href="#cb20-13" aria-hidden="true" tabindex="-1"></a><span class="co">-- Get and Post.</span></span>
+<span id="cb20-14"><a href="#cb20-14" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Method</span> <span class="ot">=</span> <span class="dt">Get</span> <span class="op">|</span> <span class="dt">Post</span></span>
+<span id="cb20-15"><a href="#cb20-15" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> <span class="dt">Verb</span> (<span class="ot">method ::</span> <span class="dt">Method</span>)</span>
+<span id="cb20-16"><a href="#cb20-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-17"><a href="#cb20-17" aria-hidden="true" tabindex="-1"></a><span class="kw">infixr</span> <span class="dv">5</span> <span class="op">:&gt;</span></span>
+<span id="cb20-18"><a href="#cb20-18" aria-hidden="true" tabindex="-1"></a><span class="kw">data</span> (<span class="ot">a ::</span> <span class="dt">Type</span>) <span class="op">:&gt;</span> (<span class="ot">b ::</span> <span class="dt">Type</span>)</span></code></pre></div>
+<p>As you can see, there isn’t a single constructor in sight, all the
+types (but Method) are empty. And now, we proceed with the
+<code>HasLink</code> class. Since we don’t have any value to give to the
+<code>link</code> method, given that the description is now a type, we
+will use <code>data Proxy a = Proxy</code> to act as an intermediate
+between the value level, where the calls to <code>link</code> will
+happen, and the type level, where the descriptions live and drive the
+link interpretation through our typeclass instances.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="ot">link ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>link api <span class="ot">=</span> link&#39; api []</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> <span class="dt">HasLink</span> api <span class="kw">where</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span><span class="ot"> api ::</span> <span class="dt">Type</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  link&#39; ::</span> <span class="dt">Proxy</span> api <span class="ot">-&gt;</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> <span class="dt">HasLink</span> (<span class="dt">Verb</span> method) <span class="kw">where</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Verb</span> method) <span class="ot">=</span> <span class="dt">Link</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  link&#39; _ acc <span class="ot">=</span> <span class="fu">reverse</span> acc</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">KnownSymbol</span> str, <span class="dt">HasLink</span> api) <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Static</span> str <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Static</span> str <span class="op">:&gt;</span> api) <span class="ot">=</span> <span class="dt">LinkType</span> api</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- we call some &quot;magic&quot; GHC function, symbolVal, to turn type-level</span></span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- strings to good old value level strings, through a Proxy to</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>  <span class="co">-- the type-level string.</span></span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>  link&#39; api acc <span class="ot">=</span> link&#39; (apiTail api) (str <span class="op">:</span> acc)</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">where</span> str <span class="ot">=</span> symbolVal (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> str)</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a><span class="kw">instance</span> (<span class="dt">Show</span> a, <span class="dt">HasLink</span> api) <span class="ot">=&gt;</span> <span class="dt">HasLink</span> (<span class="dt">Capture</span> a <span class="op">:&gt;</span> api) <span class="kw">where</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>  <span class="kw">type</span> <span class="dt">LinkType</span> (<span class="dt">Capture</span> a <span class="op">:&gt;</span> api) <span class="ot">=</span> a <span class="ot">-&gt;</span> <span class="dt">LinkType</span> api</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>  link&#39; api acc a <span class="ot">=</span> link&#39; (apiTail api) (<span class="fu">show</span> a <span class="op">:</span> acc)</span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a><span class="co">-- we&#39;re just specifying a very handy type for a function</span></span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a><span class="co">-- that&#39;s in fact much more general (forall a b. Proxy a -&gt; Proxy b).</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a><span class="co">-- no magic going on, we just decide that this function takes endpoint description</span></span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a><span class="co">-- shaped types and drops the first component.</span></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a><span class="ot">apiTail ::</span> <span class="dt">Proxy</span> (a <span class="op">:&gt;</span> b) <span class="ot">-&gt;</span> <span class="dt">Proxy</span> b</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>apiTail <span class="dt">Proxy</span> <span class="ot">=</span> <span class="dt">Proxy</span></span></code></pre></div>
+<p>It is not all that different from the code in the previous section.
+We can use it all as follows:</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode haskell"><code class="sourceCode haskell"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> <span class="dt">Foo</span> <span class="ot">=</span> <span class="dt">Static</span> <span class="st">&quot;hello&quot;</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="dt">Int</span> <span class="op">:&gt;</span> <span class="dt">Capture</span> <span class="dt">Double</span> <span class="op">:&gt;</span> <span class="dt">Verb</span> <span class="dt">&#39;Get</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="ot">linkFoo ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Double</span> <span class="ot">-&gt;</span> <span class="dt">Link</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>linkFoo <span class="ot">=</span> link (<span class="dt">Proxy</span><span class="ot"> ::</span> <span class="dt">Proxy</span> <span class="dt">Foo</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>link1,<span class="ot"> link2 ::</span> <span class="dt">Link</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>link1 <span class="ot">=</span> linkFoo <span class="dv">40</span> <span class="fl">0.1</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>link2 <span class="ot">=</span> linkFoo <span class="dv">2987</span> <span class="fl">980.5</span></span></code></pre></div>
+<p>And that’s it! The key ingredients to servant’s design are all here.
+If you want to read more about actually implementing server/client
+interpretations for the DSL, the <em>Going further</em> section has got
+you covered with a few relevant links.</p>
+<h1 id="conclusion">Conclusion</h1>
+<p>I hope this little tour of some of the designs we explored on our way
+to writing servant was useful and informative, whether from a Haskell
+EDSL writer perspective or for any Haskeller who has ever wondered about
+why the descriptions live at the type-level. The real servant libraries
+of course have a much richer vocabulary for describing endpoints and
+entire APIs, and offer many interpretations in addition to the type-safe
+links. But the core ideas behind the design and implementation are the
+same ones we progressively arrived at in this post.</p>
+<h1 id="going-further">Going further</h1>
+<ul>
+<li><p><a href="https://arow.info/blog/posts/2015-07-10-servant-intro.html">Servant,
+Type Families, and Type-level Everything - A look at advanced GHC
+features used in Servant</a></p>
+<p>I suspect this is a rather useful resource for Haskellers who haven’t
+yet encountered type-level programming in (GHC) Haskell.</p></li>
+<li><p><a href="https://www.well-typed.com/blog/2015/11/implementing-a-minimal-version-of-haskell-servant/">Implementing
+a minimal version of servant</a></p>
+<p>A more approchable and more narrowly focused alternative to the
+servant paper, which consists in implementing a very simplified version
+of servant, using however the same “API type” based approach for the
+EDSL as the real servant.</p></li>
+<li><p><a href="https://alpmestan.com/servant/servant-wgp.pdf">the
+servant paper</a>, published at the Workshop on Generic Programming,
+2015.</p></li>
+<li><p><a href="https://www.informatik.uni-marburg.de/~kos/papers/gpce06.pdf">Software
+extensions and Integration with Type Classes</a></p>
+<p>by Ralf Lämmel and Klaus Ostermann talks in greater depth than the
+slides about the highly modular approach to embedded domain specific
+languages in Haskell that we’ve seen above, and uses it on several
+examples.</p></li>
+<li><p><a href="https://github.com/tel/serv">serv</a> and <a href="https://github.com/chpatrick/solga">solga</a> are smaller, younger
+and (I think) humbler relatives of servant which make slightly different
+choices for the DSL.</p>
+<p>Somewhat relatedly, there is <a href="https://github.com/alpmestan/servant/tree/master#servant">servant-0.1</a>,
+which wasn’t anything like the current approach with its API types. The
+link leads to its README, with an example and some explanations about
+the approach, for the curious reader.</p></li>
+</ul>
+
+<p style="text-align: right;" class="date before-toc">Posted: <time datetime="2018-07-12">2018-07-12</time></p>
+
+</main>
+
+<footer>
+<p class="signoff">
+  <a href="/">Home</a>
+</p>
+</footer>
+
+<script>
+;(function() {
+  // Non-essential if user has JavaScript off. Just makes checkboxes look nicer.
+  var selector = '.task-list > li > input[type="checkbox"]';
+  var checkboxes = document.querySelectorAll(selector);
+  Array.from(checkboxes).forEach((checkbox) => {
+    var wasChecked = checkbox.checked;
+    checkbox.disabled = false;
+    checkbox.addEventListener('click', (ev) => {ev.target.checked = wasChecked});
+  });
+})();
+</script>
+</body>
+</html>
