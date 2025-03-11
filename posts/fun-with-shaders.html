@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="dcterms.date" content="2025-03-11" />
+  <title>Fun with shaders</title>
+<style>
+
+:root {
+
+--background-color: #fafbfd;
+--color-text: #1b2733;
+--color-text-secondary: #637282;
+--color-link: #0070e0;
+--color-sidenote: #616970;
+--highlight-red: #ea9999;
+--highlight-yellow: #ffe599;
+--highlight-green: #b6d7a8;
+--highlight-blue: #a4c2f4;
+--highlight-purple: #b4a7d6;
+--color-inline-code: #1b2733;
+--color-inline-code-bg: #f3f3f8;
+--color-border: #dfdfd0;
+--color-border-heavy: #ccccd4;
+--color-table-heading: #f3f3fb;
+
+--font-family-prose: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Open Sans","Helvetica Neue",sans-serif;
+--font-family-heading: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Open Sans","Helvetica Neue",sans-serif;
+--font-family-code: Menlo, monospace;
+--side-note-number-font-family: var(--font-family-prose);
+--line-height: 26px;
+--font-size: 17px;
+--inline-code-font-size: 15px;
+--code-block-font-size: 14px;
+--code-block-side-padding: 8px;
+--line-numbers-font-size: 12px;
+--tight-code-line-height: 18px;
+--tight-code-padding-top: 5px;
+--side-note-line-height: 20px;
+--side-note-font-size: 13px;
+--side-note-code-font-size: 13px;
+--side-note-baseline-offset: 4px;
+--side-note-sup-offset: -6px;
+--side-note-number-hang-left: -6px;
+--side-note-text-indent: -9px;
+--heading-font-weight: 500;
+--title-font-size: 42px;
+--title-code-font-size: 40px;
+--title-line-height: 48px;
+--title-margin-top: 4px;
+--h1-font-size: 32px;
+--h1-code-font-size: 29px;
+--h1-line-height: 36px;
+--h1-word-spacing: 1px;
+--h1-margin-top: 30px;
+--h1-margin-bottom: 12px;
+--h2-font-size: 22px;
+--h2-code-font-size: 20px;
+--h2-line-height: 28px;
+--h2-word-spacing: 0.5px;
+--h2-margin-top: 18px;
+--h2-margin-bottom: 6px;
+--ul-indent-size: 23px;
+--ol-indent-size: 19px;
+--ol-li-padding-left: 4px;
+--hr-margin-top: 18px;
+--hr-margin-bottom: calc(var(--line-height) - var(--hr-margin-top) - 1px);
+--extra-wide-scale-factor: 1.5;
+--figcaption-line-height: 21px;
+--figcaption-font-size: 14px;
+--figcaption-code-font-size: 13px;
+--figcaption-gap: 6px;
+--captioned-figure-gap: 10px;
+--table-line-height: 21px;
+--table-font-size: 14px;
+--table-code-font-size: 13px;
+--nav-toc-font-size: 12px;
+--nav-toc-code-font-size: 12px;
+--nav-toc-indent: 15px;
+--nav-toc-baseline-offset: 2px;
+
+--main-width: 745px;
+
+--main-width-narrow: 550px;
+--side-note-max-width: 300px;
+}
+
+*, *:after, *:before {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+-webkit-tap-highlight-color: rgba(0,0,0,0);
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+html {
+
+-webkit-text-size-adjust: 100%;
+}
+body {
+font-family: var(--font-family-prose);
+color: var(--color-text);
+font-size: var(--font-size);
+line-height: var(--line-height);
+-webkit-font-variant-ligatures: no-common-ligatures;
+font-variant-ligatures: no-common-ligatures;
+
+hanging-punctuation: first;
+margin: 0;
+padding: 0;
+padding-top: var(--title-margin-top);
+width: 100%;
+background-color: var(--background-color);
+}
+@media print {
+body {
+background-color: initial;
+}
+}
+
+
+.only-light-mode {
+display: inherit;
+}
+.only-dark-mode {
+display: none;
+}
+@media (prefers-color-scheme: dark) {
+.only-light-mode {
+display: none;
+}
+.only-dark-mode {
+display: inherit;
+}
+}
+
+
+
+.sidenote,
+.marginnote {
+color: var(--color-sidenote);
+font-size: var(--side-note-font-size);
+line-height: var(--side-note-line-height);
+vertical-align: baseline;
+
+margin-top: var(--side-note-baseline-offset);
+}
+.sidenote code,
+.marginnote code {
+color: var(--color-sidenote);
+}
+main {
+counter-reset: sidenote-counter;
+}
+.sidenote-number {
+counter-increment: sidenote-counter;
+}
+.sidenote-number:after,
+.sidenote:before {
+content: counter(sidenote-counter);
+position: relative;
+}
+nav#TOC label,
+label.margin-toggle:not(.sidenote-number),
+.sidenote-number:after,
+.sidenote:before,
+.footnote-ref sup,
+sup {
+font-size: var(--side-note-font-size);
+font-weight: 700;
+font-family: var(--side-note-number-font-family);
+-webkit-font-feature-settings: "tnum" 1;
+font-feature-settings: "tnum" 1;
+
+vertical-align: baseline;
+position: relative;
+top: var(--side-note-sup-offset);
+}
+sup {
+font-weight: inherit;
+}
+
+.sidenote:before { left: var(--side-note-number-hang-left); }
+
+.sidenote { text-indent: var(--side-note-text-indent); }
+
+
+input.margin-toggle {
+display: none;
+}
+label.margin-toggle:not(.sidenote-number) {
+display: none;
+}
+label.sidenote-number {
+display: inline;
+}
+
+@media screen and (max-width: calc(26px + 550px + 26px + 169px + 26px - 1px)) {
+.margin-toggle:checked + .sidenote,
+.margin-toggle:checked + .marginnote {
+margin-top: var(--side-note-line-height);
+vertical-align: baseline;
+}
+label.margin-toggle {
+color: var(--color-link);
+}
+label.margin-toggle:not(.sidenote-number) {
+display: inline;
+}
+label {
+cursor: pointer;
+}
+}
+
+
+
+h1, h2 {
+font-family: var(--font-family-heading);
+font-weight: var(--heading-font-weight);
+}
+h4, h5, h6 {
+font-weight: normal;
+}
+h1.title {
+margin-top: var(--line-height);
+margin-bottom: var(--line-height);
+font-size: var(--title-font-size);
+line-height: var(--title-line-height);
+text-align: center
+}
+h1.title code {
+font-size: var(--title-code-font-size);
+}
+h1:not(.title) {
+font-size: var(--h1-font-size);
+line-height: var(--h1-line-height);
+word-spacing: var(--h1-word-spacing);
+margin-top: var(--h1-margin-top);
+margin-bottom: var(--h1-margin-bottom);
+}
+h1:not(.title) code {
+font-size: var(--h1-code-font-size);
+}
+h2 {
+font-size: var(--h2-font-size);
+line-height: var(--h2-line-height);
+word-spacing: var(--h2-word-spacing);
+margin-top: var(--h2-margin-top);
+margin-bottom: var(--h2-margin-bottom);
+}
+h2 code {
+font-size: var(--h2-code-font-size);
+}
+h3 {
+font-size: var(--font-size);
+line-height: var(--line-height);
+font-weight: bold;
+}
+h1:not(.title) + *, h1:not(.title) + p { margin-top: var(--h1-margin-bottom); }
+h2 + *, h2 + p { margin-top: var(--h2-margin-bottom); }
+h3 + *, h3 + p { margin-top: 0; }
+
+
+p, main > ul, main > ol, div.sourceCode, main > pre, img, table {
+margin-top: var(--line-height);
+margin-bottom: var(--line-height)
+}
+ul:not(.task-list) {
+margin-left: var(--ul-indent-size);
+}
+ol {
+margin-left: var(--ol-indent-size);
+}
+ul.task-list {
+list-style: none;
+margin-left: var(--ul-indent-size);
+}
+ul.task-list > li {
+position: relative;
+}
+ul.task-list > li > input[type="checkbox"] {
+position: absolute;
+left: calc(-1 * var(--ul-indent-size));
+height: var(--line-height);
+}
+ol > li {
+padding-left: var(--ol-li-padding-left);
+}
+ol { list-style-type: decimal; }
+ol ol { list-style-type: lower-alpha; }
+ol ol ol { list-style-type: lower-roman; }
+ol ol ol ol { list-style-type: decimal; }
+ol ol ol ol ol { list-style-type: lower-alpha; }
+ol ol ol ol ol ol { list-style-type: lower-roman; }
+ol ol ol ol ol ol ol { list-style-type: decimal; }
+ol ol ol ol ol ol ol ol { list-style-type: lower-alpha; }
+ol ol ol ol ol ol ol ol ol { list-style-type: lower-roman; }
+ul { list-style-type: disc; }
+ul ul { list-style-type: circle; }
+ul ul ul { list-style-type: square; }
+ul ul ul ul { list-style-type: disc; }
+ul ul ul ul ul { list-style-type: circle; }
+ul ul ul ul ul ul { list-style-type: square; }
+ul ul ul ul ul ul ul { list-style-type: disc; }
+ul ul ul ul ul ul ul ul { list-style-type: circle; }
+ul ul ul ul ul ul ul ul ul { list-style-type: square; }
+blockquote {
+border-left: 1px solid var(--color-text-secondary);
+padding-left: 1.5rem;
+font-style: italic;
+}
+blockquote > p {
+margin-top: 0;
+}
+blockquote em, blockquote i, blockquote .sidenote-wrapper {
+font-style: normal;
+}
+hr {
+margin-top: var(--hr-margin-top);
+margin-bottom: var(--hr-margin-bottom);
+border-style: solid;
+color: var(--color-border-heavy);
+border-width: 1px 0 0;
+}
+a code, a:link code, a:visited code,
+a, a:link, a:visited {
+color: var(--color-link);
+text-decoration: none;
+}
+a:hover {
+text-decoration: underline;
+}
+span.mark, mark {
+
+color: inherit;
+padding: 2px 0 1px;
+}
+span.mark.red, mark.red { background-color: var(--highlight-red); }
+span.mark.yellow, mark.yellow { background-color: var(--highlight-yellow); }
+span.mark.green, mark.green { background-color: var(--highlight-green); }
+span.mark.blue, mark.blue { background-color: var(--highlight-blue); }
+span.mark.purple, mark.purple { background-color: var(--highlight-purple); }
+.subtitle {
+margin-top: 0;
+}
+.author, .date {
+margin-top: 0;
+margin-bottom: 0;
+}
+.signoff {
+margin-top: calc(4 * var(--line-height));
+margin-bottom: calc(4 * var(--line-height));
+text-align: center;
+}
+
+span.smallcaps{ font-variant: small-caps; }
+span.underline{ text-decoration: underline; }
+.katex-display {
+background: var(--background-color);
+transform: translateZ(0px);
+}
+@media print {
+.katex-display {
+background-color: initial;
+}
+}
+
+
+
+code {
+font-family: var(--font-family-code);
+word-spacing: normal;
+
+color: var(--color-inline-code);
+background-color: var(--color-inline-code-bg);
+font-size: var(--inline-code-font-size);
+margin: 0;
+padding: 2px 0 1px;
+border: 1px solid var(--color-border);
+border-radius: 1px;
+}
+.sidenote code,
+.marginnote code {
+font-size: var(--side-note-code-font-size);
+}
+pre code {
+
+color: inherit;
+background-color: inherit;
+font-size: var(--code-block-font-size);
+line-height: var(--line-height);
+margin: initial;
+padding: initial;
+border: initial;
+border-radius: initial;
+}
+pre > code {
+position: relative; 
+display: inline-block;
+min-width: 100%;
+z-index: 1;
+white-space: pre-wrap;
+padding: 0 var(--code-block-side-padding);
+}
+code.sourceCode::selection {
+
+background: transparent;
+}
+.wide > pre, .wide > div.sourceCode {
+
+transform: translateZ(0px);
+}
+.wide pre > code {
+white-space: pre;
+}
+pre.numberSource code {
+counter-reset: source-line 0;
+}
+pre > code.sourceCode > span {
+line-height: var(--line-height);
+display: inline-block;
+min-width: 100%;
+}
+div.sourceCode {
+
+--line-numbers-width: calc(4 * var(--line-numbers-font-size));
+--line-numbers-negative-width: calc(-1 * var(--line-numbers-width));
+margin-left: var(--line-numbers-negative-width);
+}
+div.sourceCode > pre {
+margin-left: var(--line-numbers-width);
+}
+pre.numberSource > code.sourceCode > span {
+counter-increment: source-line;
+padding-left: var(--line-numbers-width);
+text-indent: var(--line-numbers-negative-width);
+position: relative;
+left: var(--line-numbers-negative-width);
+}
+pre.numberSource > code.sourceCode > span > a:first-child::before {
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+content: counter(source-line);
+font-size: var(--line-numbers-font-size);
+text-decoration: none;
+position: relative;
+text-align: right;
+display: inline-block;
+padding: 0 calc(2 * var(--code-block-side-padding));
+width: var(--line-numbers-width);
+}
+pre > code.sourceCode > span > a:first-child::before:hover {
+text-decoration: underline;
+}
+
+.tight-code pre,
+pre.tight-code {
+padding-top: var(--tight-code-padding-top);
+}
+pre.tight-code code,
+.tight-code pre code,
+.tight-code pre > code.sourceCode > span,
+pre.tight-code > code.sourceCode > span {
+line-height: var(--tight-code-line-height);
+}
+
+
+pre > code.sourceCode > span::after {
+position: absolute;
+background-color: var(--color-code-highlight-bg);
+z-index: -1;
+left: calc(var(--line-numbers-width) - var(--code-block-side-padding));
+right: calc(var(--line-numbers-negative-width) - var(--code-block-side-padding));
+top: 0;
+height: 100%;
+}
+pre.hl-1 > code.sourceCode > span:nth-of-type(1)::after { content: ""; }
+pre.hl-2 > code.sourceCode > span:nth-of-type(2)::after { content: ""; }
+pre.hl-3 > code.sourceCode > span:nth-of-type(3)::after { content: ""; }
+pre.hl-4 > code.sourceCode > span:nth-of-type(4)::after { content: ""; }
+pre.hl-5 > code.sourceCode > span:nth-of-type(5)::after { content: ""; }
+pre.hl-6 > code.sourceCode > span:nth-of-type(6)::after { content: ""; }
+pre.hl-7 > code.sourceCode > span:nth-of-type(7)::after { content: ""; }
+pre.hl-8 > code.sourceCode > span:nth-of-type(8)::after { content: ""; }
+pre.hl-9 > code.sourceCode > span:nth-of-type(9)::after { content: ""; }
+pre.hl-10 > code.sourceCode > span:nth-of-type(10)::after { content: ""; }
+pre.hl-11 > code.sourceCode > span:nth-of-type(11)::after { content: ""; }
+pre.hl-12 > code.sourceCode > span:nth-of-type(12)::after { content: ""; }
+pre.hl-13 > code.sourceCode > span:nth-of-type(13)::after { content: ""; }
+pre.hl-14 > code.sourceCode > span:nth-of-type(14)::after { content: ""; }
+pre.hl-15 > code.sourceCode > span:nth-of-type(15)::after { content: ""; }
+pre.hl-16 > code.sourceCode > span:nth-of-type(16)::after { content: ""; }
+pre.hl-17 > code.sourceCode > span:nth-of-type(17)::after { content: ""; }
+pre.hl-18 > code.sourceCode > span:nth-of-type(18)::after { content: ""; }
+pre.hl-19 > code.sourceCode > span:nth-of-type(19)::after { content: ""; }
+pre.hl-20 > code.sourceCode > span:nth-of-type(20)::after { content: ""; }
+pre.hl-21 > code.sourceCode > span:nth-of-type(21)::after { content: ""; }
+pre.hl-22 > code.sourceCode > span:nth-of-type(22)::after { content: ""; }
+pre.hl-23 > code.sourceCode > span:nth-of-type(23)::after { content: ""; }
+pre.hl-24 > code.sourceCode > span:nth-of-type(24)::after { content: ""; }
+pre.hl-25 > code.sourceCode > span:nth-of-type(25)::after { content: ""; }
+pre.hl-26 > code.sourceCode > span:nth-of-type(26)::after { content: ""; }
+pre.hl-27 > code.sourceCode > span:nth-of-type(27)::after { content: ""; }
+pre.hl-28 > code.sourceCode > span:nth-of-type(28)::after { content: ""; }
+pre.hl-29 > code.sourceCode > span:nth-of-type(29)::after { content: ""; }
+pre.hl-30 > code.sourceCode > span:nth-of-type(30)::after { content: ""; }
+pre.hl-31 > code.sourceCode > span:nth-of-type(31)::after { content: ""; }
+pre.hl-32 > code.sourceCode > span:nth-of-type(32)::after { content: ""; }
+pre.hl-33 > code.sourceCode > span:nth-of-type(33)::after { content: ""; }
+pre.hl-34 > code.sourceCode > span:nth-of-type(34)::after { content: ""; }
+pre.hl-35 > code.sourceCode > span:nth-of-type(35)::after { content: ""; }
+pre.hl-36 > code.sourceCode > span:nth-of-type(36)::after { content: ""; }
+pre.hl-37 > code.sourceCode > span:nth-of-type(37)::after { content: ""; }
+pre.hl-38 > code.sourceCode > span:nth-of-type(38)::after { content: ""; }
+pre.hl-39 > code.sourceCode > span:nth-of-type(39)::after { content: ""; }
+pre.hl-40 > code.sourceCode > span:nth-of-type(40)::after { content: ""; }
+
+
+
+
+figure {
+margin-bottom: var(--captioned-figure-gap);
+}
+figure + p {
+margin-top: var(--captioned-figure-gap);
+}
+figure > img, figure > pre, figure > div.sourceCode {
+margin-bottom: var(--figcaption-gap);
+}
+img {
+width: 100%;
+display: block;
+}
+.wide img {
+
+transform: translateZ(0px);
+}
+figcaption {
+font-size: var(--figcaption-font-size);
+line-height: var(--figcaption-line-height);
+font-style: italic;
+text-align: center;
+color: var(--color-text-secondary);
+}
+.left-align-caption figcaption {
+text-align: left;
+}
+figcaption code {
+font-size: var(--figcaption-code-font-size);
+}
+
+
+table {
+-webkit-font-feature-settings: "tnum" 1;
+font-feature-settings: "tnum" 1;
+font-size: var(--table-font-size);
+line-height: var(--table-line-height);
+border-spacing: 0;
+border-collapse: collapse;
+border: 1px solid var(--color-border-heavy);
+width: 100%;
+
+background-color: var(--background-color);
+}
+thead, tbody {
+vertical-align: top;
+}
+td > *:first-child {
+margin-top: 0;
+}
+td > *:last-child {
+margin-bottom: 0;
+}
+@media print {
+table {
+background-color: initial;
+}
+}
+table code {
+font-size: var(--table-code-font-size);
+}
+table pre code {
+font-size: inherit;
+}
+.wide table {
+
+transform: translateZ(0px);
+}
+table td, table th {
+border: 1px solid var(--color-border-heavy);
+padding: 5px 8px;
+min-width: 100px;
+}
+table th {
+background-color: var(--color-table-heading);
+}
+table > caption {
+caption-side: bottom;
+margin-top: var(--figcaption-gap);
+margin-bottom: calc(var(--captioned-figure-gap) - var(--line-height));
+font-size: var(--figcaption-font-size);
+line-height: var(--figcaption-line-height);
+font-style: italic;
+text-align: center;
+color: var(--color-text-secondary);
+}
+.left-align-caption table > caption {
+text-align: left;
+}
+table > caption code {
+font-size: var(--figcaption-code-font-size);
+}
+
+.note table {
+font-size: inherit;
+line-height: inherit;
+}
+.note table, .note td {
+border: none;
+}
+.note.red td { background: var(--highlight-red); }
+.note.yellow td { background: var(--highlight-yellow); }
+.note.green td { background: var(--highlight-green); }
+.note.blue td { background: var(--highlight-blue); }
+.note.purple td { background: var(--highlight-purple); }
+
+
+.date.before-toc {
+padding-bottom: var(--line-height);
+}
+nav#TOC {
+margin-bottom: var(--line-height);
+border-left: 1px solid var(--color-text-secondary);
+padding-left: 1.5rem;
+}
+nav#TOC input {
+display: none;
+}
+nav#TOC label {
+color: var(--color-link);
+cursor: pointer;
+}
+nav#TOC > ul {
+display: none;
+}
+nav#TOC > input:checked + ul {
+display: block;
+}
+@media print {
+nav#TOC > input + ul {
+display: block;
+}
+}
+
+@media screen and (min-width: calc(745px + 2 * (52px + 206px + 52px) - 1px)) {
+header {
+margin-bottom: var(--line-height);
+}
+.date.before-toc {
+padding-bottom: initial;
+}
+nav#TOC {
+
+margin-bottom: initial;
+border-left: initial;
+padding-left: initial;
+position: sticky;
+margin-top: calc(var(--nav-toc-baseline-offset));
+float: left;
+top: var(--line-height);
+font-size: var(--nav-toc-font-size);
+color: var(--color-text-secondary);
+margin-left: var(--line-height);
+max-width: calc((100vw - var(--main-width)) / 2 - 2 * var(--line-height));
+max-height: calc(100vh - 2 * var(--line-height));
+overflow-y: auto;
+}
+nav#TOC label {
+display: none;
+}
+nav#TOC ul {
+display: block;
+list-style: none;
+margin-left: var(--nav-toc-indent);
+}
+nav#TOC > ul {
+margin-left: 0;
+}
+nav#TOC li {
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+nav#TOC code {
+font-size: var(--nav-toc-code-font-size);
+}
+nav#TOC code,
+nav#TOC a,
+nav#TOD a:link,
+nav#TOD a:visited {
+color: var(--color-text-secondary);
+}
+nav#TOC a:hover,
+nav#TOC a:hover code {
+text-decoration: none;
+color: var(--color-link);
+}
+}
+
+
+.sidenote,
+.marginnote {
+float: right;
+clear: right;
+position: relative;
+width: var(--computed-width);
+max-width: var(--side-note-max-width);
+margin-right: calc(-1 * min(var(--computed-width), var(--side-note-max-width)) - var(--margin-left));
+}
+
+
+@media screen and (min-width: calc(745px + 2 * (52px + 206px + 52px))) {
+header,
+main,
+footer {
+max-width: var(--main-width);
+}
+header,
+main,
+footer {
+margin-left: auto;
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+--margin-left: calc(2 * var(--line-height));
+--margin-right: var(--margin-left);
+--computed-width: calc((100vw - 100%) / 2 - var(--margin-right) - var(--margin-left));
+}
+.wide {
+width: 100%;
+overflow-x: auto;
+}
+.wide.extra-wide {
+margin-left: calc((1 - var(--extra-wide-scale-factor)) / 2 * 100%);
+width: calc(var(--extra-wide-scale-factor) * 100%);
+}
+.wide.full-width {
+margin-left: calc(var(--line-height) - ((100vw - var(--main-width)) / 2));
+width: calc(100vw - 2 * var(--line-height));
+}
+.wide.extra-wide figcaption,
+.wide.extra-wide table > caption {
+margin-left: calc(((var(--extra-wide-scale-factor) - 1) / 2) * var(--main-width));
+max-width: var(--main-width);
+margin-right: calc(100% - var(--main-width) - (((var(--extra-wide-scale-factor) - 1) / 2) * var(--main-width)));
+}
+.wide.full-width figcaption,
+.wide.full-width table > caption {
+margin-left: calc((100vw - var(--main-width)) / 2 - var(--line-height));
+max-width: var(--main-width);
+margin-right: calc(100% - var(--main-width) - ((100vw - var(--main-width)) / 2 - var(--line-height)));
+}
+}
+
+
+
+@media screen and (min-width: calc(52px + 745px + 52px + 206px + 52px)) and (max-width: calc(745px + 2 * (52px + 206px + 52px) - 1px)) {
+header,
+nav#TOC,
+main,
+footer {
+margin-left: calc(2 * var(--line-height));
+max-width: var(--main-width);
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+--margin-left: calc(2 * var(--line-height));
+--margin-right: var(--margin-left);
+--computed-width: calc(100vw - var(--main-width) - calc(2 * var(--line-height)) - var(--margin-right) - var(--margin-left));
+}
+.wide {
+width: 100%;
+overflow-x: auto;
+overflow-y: hidden;
+}
+.wide.extra-wide {
+margin-left: calc(-1 * var(--line-height));
+width: calc(100vw - 2 * var(--line-height));
+max-width: calc(var(--extra-wide-scale-factor) * var(--main-width));
+}
+.wide.full-width {
+margin-left: calc(-1 * var(--line-height));
+width: calc(100vw - 2 * var(--line-height));
+max-width: calc(100vw - 2 * var(--line-height));
+}
+.wide.extra-wide .katex-display,
+.wide.full-width .katex-display {
+padding-left: var(--line-height);
+padding-right: var(--line-height);
+}
+.wide.extra-wide .katex-display,
+.wide.extra-wide .katex-display > .katex,
+.wide.full-width .katex-display,
+.wide.full-width .katex-display > .katex {
+text-align: left;
+}
+.wide.extra-wide figcaption,
+.wide.extra-wide table > caption,
+.wide.full-width figcaption,
+.wide.full-width table > caption {
+text-align: left;
+margin-left: var(--line-height);
+max-width: var(--main-width);
+}
+}
+
+
+
+@media screen and (min-width: calc(26px + 550px + 26px + 169px + 26px)) and (max-width: calc(52px + 745px + 52px + 206px + 52px - 1px)) {
+header,
+nav#TOC,
+main,
+footer {
+margin-left: var(--line-height);
+max-width: calc(max(var(--main-width-narrow), 100vw - (3 * var(--line-height)) - var(--side-note-max-width)));
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+--margin-left: var(--line-height);
+--margin-right: var(--line-height);
+--computed-width: calc(100vw - var(--main-width-narrow) - var(--line-height) - var(--margin-right) - var(--margin-left));
+}
+.wide {
+width: var(--main-width);
+overflow-x: auto;
+overflow-y: hidden;
+}
+.wide .katex-display,
+.wide .katex-display > .katex {
+text-align: left;
+}
+.wide figcaption,
+.wide table > caption {
+text-align: left;
+max-width: var(--main-width-narrow);
+}
+.wide.extra-wide,
+.wide.full-width {
+width: calc(100vw - 2 * var(--line-height));
+}
+}
+
+
+
+@media screen and (max-width: calc(26px + 550px + 26px + 169px + 26px - 1px)) {
+header,
+nav#TOC,
+main,
+footer {
+margin-left: var(--line-height);
+margin-right: var(--line-height);
+}
+.sidenote,
+.marginnote {
+display: none;
+}
+.margin-toggle:checked + .sidenote,
+.margin-toggle:checked + .marginnote {
+display: block;
+float: left;
+clear: both;
+width: 100%;
+max-width: 100%;
+}
+.wide {
+width: 100%;
+overflow-x: auto;
+overflow-y: hidden;
+}
+.wide .katex-display,
+.wide .katex-display > .katex {
+text-align: left;
+}
+.wide figcaption,
+.wide table > caption {
+text-align: left;
+max-width: calc(100vw - 2 * var(--line-height));
+}
+}
+
+
+@page {
+size: letter;
+margin: 0.5in;
+
+margin-left: 0.25in;
+}
+@media print {
+:root {
+--line-height: 18px;
+--font-size: 12px;
+--inline-code-font-size: 11px;
+--code-block-font-size: 10px;
+--code-block-side-padding: 6px;
+--line-numbers-font-size: 8.5px;
+--tight-code-line-height: 12.5px;
+--tight-code-padding-top: 2px;
+--side-note-line-height: 14px;
+--side-note-font-size: 9px;
+--side-note-code-font-size: 9px;
+--side-note-baseline-offset: 3px;
+--side-note-sup-offset: -4px;
+--side-note-number-hang-left: -4px;
+--side-note-text-indent: -6.5px;
+--title-font-size: 30px;
+--title-code-font-size: 29px;
+--title-line-height: 37px;
+--title-margin-top: 4px;
+--h1-font-size: 22px;
+--h1-code-font-size: 20px;
+--h1-line-height: 28px;
+--h1-word-spacing: 0.5px;
+--h1-margin-top: 18px;
+--h1-margin-bottom: 6px;
+--h2-font-size: 16.5px;
+--h2-code-font-size: 15px;
+--h2-line-height: 22px;
+--h2-word-spacing: 0px;
+--h2-margin-top: 14px;
+--h2-margin-bottom: 4.5px;
+--ul-indent-size: 18px;
+--ol-indent-size: 14px;
+--hr-margin-top: 14px;
+--figcaption-line-height: 16px;
+--figcaption-font-size: 10px;
+--figcaption-code-font-size: 9.5px;
+--figcaption-gap: 4.5px;
+--captioned-figure-gap: 7.5px;
+--table-line-height: 16px;
+--table-font-size: 10px;
+--table-code-font-size: 9.5px;
+--nav-toc-font-size: 8.5px;
+--nav-toc-code-font-size: 8.5px;
+}
+body {
+padding-top: 0;
+
+padding-left: 0.25in;
+}
+header,
+nav#TOC,
+main,
+footer {
+width: 5.25in;
+margin-right: auto;
+}
+.sidenote,
+.marginnote {
+width: 2in;
+margin-right: -2.25in;
+}
+.wide {
+width: 7.5in;
+overflow-x: hidden;
+overflow-y: hidden;
+}
+.wide .katex-display,
+.wide .katex-display > .katex {
+text-align: left;
+}
+.wide figcaption,
+.wide table > caption {
+text-align: left;
+width: 5.25in;
+}
+.wide pre > code {
+white-space: pre-wrap;
+}
+}
+h1, h2, h3 {
+page-break-after: avoid;
+}
+table, figure, pre, img {
+page-break-inside: avoid;
+}
+p code {
+border: 1pt solid #CCC;
+white-space: nowrap;
+
+padding: 2pt 4pt;
+margin-left: 4pt;
+margin-right: 4pt;
+}
+
+
+:root {
+--solarized-base03: #002b36;
+--solarized-base02: #073642;
+--solarized-base01: #586e75;
+--solarized-base00: #657b83;
+--solarized-base0: #839496;
+--solarized-base1: #93a1a1;
+--solarized-base2: #eee8d5;
+--solarized-base3: #fdf6e3;
+--solarized-yellow: #b58900;
+--solarized-orange: #cb4b16;
+--solarized-red: #dc322f;
+--solarized-magenta: #d33682;
+--solarized-violet: #6c71c4;
+--solarized-blue: #268bd2;
+--solarized-cyan: #2aa198;
+--solarized-green: #859900;
+}
+
+pre, pre.numberSource {
+background: var(--solarized-base3);
+
+--color-code-highlight-bg: var(--solarized-base2);
+}
+pre code { color: var(--solarized-base00); }
+pre.numberSource > code.sourceCode > span > a:first-child::before {
+color: var(--solarized-base1);
+}
+code span.kw { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+code span.dt { color: var(--solarized-yellow); font-weight: normal; font-style: normal; } 
+code span.dv { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.bn { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.fl { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.ch { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.st { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.co { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.ot { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code span.al { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.fu { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code span.er { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.wa { color: var(--solarized-orange); font-weight: normal; font-style: italic; } 
+code span.cn { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.sc { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.vs { color: var(--solarized-cyan); font-weight: normal; font-style: normal; } 
+code span.ss { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code span.im { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.va { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code span.cf { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+code span.op { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+code span.bu { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.ex { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.pp { color: var(--solarized-orange); font-weight: normal; font-style: normal; } 
+code span.at { color: var(--solarized-base00); font-weight: normal; font-style: normal; } 
+code span.do { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.an { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.cv { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+code span.in { color: var(--solarized-base1); font-weight: normal; font-style: italic; } 
+a.sourceLine::before { text-decoration: none; }
+
+code.diff span.kw { color: var(--solarized-yellow); font-weight: normal; font-style: normal; } 
+code.diff span.dt { color: var(--solarized-blue); font-weight: normal; font-style: normal; } 
+code.diff span.st { color: var(--solarized-red); font-weight: normal; font-style: normal; } 
+code.diff span.va { color: var(--solarized-green); font-weight: normal; font-style: normal; } 
+</style>
+</head>
+<body>
+
+<header>
+<div style="margin-top: 16px; margin-bottom: 64px; text-align: center">
+  <a href="/">Home</a>
+</div>
+<h1 class="title" style="margin-bottom: 64px">Fun with shaders</h1>
+<blockquote class="metadata">
+</blockquote>
+</header>
+
+
+<main>
+<p>While I did play around occasionally with “non trivial 2D graphics”
+as well as 3D rendering, especially being taught the basics of the
+latter by my friend <a href="https://github.com/guibou">guibou</a> a few
+years ago, I never really bothered to learn shaders until recently. I
+was implementing the logic on CPU.</p>
+<p>But lately I started playing around a bit more, and <a href="https://shadertoy.com/">shadertoy</a> makes it so easy and
+tempting… Here are a few examples.</p>
+<hr />
+<iframe width="640" height="360" frameborder="0" src="data:text/html; charset=UTF-8;charset=utf-8,%0A%3C%21DOCTYPE%20HTML%3E%0A%3Chtml%20lang%3D%22en%22%3E%0A%3Chead%3E%0A%20%20%20%20%0A%3Cscript%20async%20src%3D%22https%3A%2F%2Fwww%2Egoogletagmanager%2Ecom%2Fgtag%2Fjs%3Fid%3DG%2D7SYLWGZYJ2%22%3E%3C%2Fscript%3E%0A%3Cscript%3E%0A%20%20window%2EdataLayer%20%3D%20window%2EdataLayer%20%7C%7C%20%5B%5D%3B%0A%20%20function%20gtag%28%29%7BdataLayer%2Epush%28arguments%29%3B%7D%0A%20%20gtag%28%27js%27%2C%20new%20Date%28%29%29%3B%0A%0A%20%20gtag%28%27config%27%2C%20%27G%2D7SYLWGZYJ2%27%29%3B%0A%3C%2Fscript%3E%0A%0A%3Ctitle%3EEmbed%20%2D%20Shadertoy%20BETA%3C%2Ftitle%3E%0A%3Cmeta%20charset%3D%22utf%2D8%22%20%2F%3E%0A%3Cmeta%20name%3D%22Keywords%22%20content%3D%22shadertoy%2C%20shader%20toy%2C%20quilez%2C%20inigo%2C%20jeremias%2C%20pol%2C%20fractals%2C%20demoscene%2C%20computer%20graphics%2C%20mathematics%2C%20rendering%2C%20demo%2C%203D%2C%20realtime%2C%20shader%2C%20raytracing%2C%20raymarching%2C%20webgl%2C%20glsl%22%20%2F%3E%0A%3Cmeta%20name%3D%22Description%22%20content%3D%22Build%20shaders%2C%20share%20them%2C%20and%20learn%20from%20the%20best%20community%2E%22%20%2F%3E%0A%3Cmeta%20name%3D%22Author%22%20content%3D%22Beautypi%22%20%2F%3E%0A%3Cmeta%20name%3D%22apple%2Dmobile%2Dweb%2Dapp%2Dcapable%22%20content%3D%22yes%22%20%2F%3E%0A%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice%2Dwidth%2C%20initial%2Dscale%3D1%2E0%22%20%2F%3E%0A%0A%3Clink%20rel%3D%22image%5Fsrc%22%20href%3D%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%2Fimg%2Flogo%2Epng%22%20%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F57%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20sizes%3D%2272x72%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F72%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20sizes%3D%22114x114%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F114%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20href%3D%22%2Fimg%2Ffavicon%2Eico%22%2F%3E%0A%0A%3Cstyle%3E%2A%0A%7B%0A%20%20%20%20box%2Dsizing%3A%20border%2Dbox%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%20%7B%0A%20%20%20%20height%3A%208px%3B%0A%20%20%20%20width%3A%208px%3B%0A%20%20%20%20background%3A%20%23404040%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%2Dthumb%0A%7B%0A%20%20%20%20background%3A%20%23909090%3B%0A%20%20%20%20border%2Dradius%3A%200ex%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%2Dcorner%0A%7B%0A%20%20%20%20background%3A%20%23000%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dinput%2Dplaceholder%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0Ainput%3A%2Dmoz%2Dplaceholder%2C%20textarea%3A%2Dmoz%2Dplaceholder%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0Ainput%2Eplaceholder%2Dtext%2C%20textarea%2Eplaceholder%2Dtext%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0A%0Apre%20%0A%7B%0A%20%20%20%20white%2Dspace%3A%20pre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dmoz%2Dpre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dpre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Do%2Dpre%2Dwrap%3B%0A%20%20%20%20word%2Dwrap%3A%20break%2Dword%3B%0A%7D%0A%0A%40font%2Dface%0A%7B%0A%20%20%20%20font%2Dfamily%3A%20Lobster%3B%0A%20%20%20%20src%3A%20url%28%22%2Fimg%2Flobster%2Eotf%22%29%20format%28%22opentype%22%29%3B%0A%7D%0A%0Adiv%23centerScreen%0A%7B%0A%20%20%20%20left%3A%2050%25%3B%0A%20%20%20%20top%3A%2050%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Aa%2EheaderLinks%3Ahover%0A%7B%0A%20%20%20%20background%2Dcolor%3A%23505050%3B%0A%20%20%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Abody%0A%7B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20font%2Dsize%3A12px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ATahoma%2CArial%3B%0A%20%20%20%20background%2Drepeat%3A%20no%2Drepeat%3B%0A%20%20%20%20%2F%2Fbackground%2Dattachment%3A%20fixed%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20background%2Dcolor%3A%20%23d0d0d0%3B%0A%20%20%20%20background%2Drepeat%3A%20repeat%3B%0A%20%20%20%20user%2Dselect%3A%20text%3B%0A%7D%0A%0Aa%2C%0Aa%3Ahover%2C%0Aa%3Avisited%0A%7B%0A%20%20color%20%3A%20inherit%3B%0A%7D%0A%0Adiv%23content%20%7B%0A%20%20%20%20width%3A%2095%25%3B%0A%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20margin%3A%20auto%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20min%2Dheight%3A%20calc%28100vh%20%2D%2080px%29%3B%0A%7D%0A%0A%0A%2EnotificationCount%0A%7B%0A%20background%2Dcolor%3A%23ff0000%3B%0A%20padding%2Dleft%3A3px%3B%0A%20padding%2Dright%3A1px%3B%0A%20padding%2Dtop%3A1px%3B%0A%20padding%2Dbottom%3A1px%3B%0A%7D%0A%0Adiv%23header%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23404040%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20padding%3A%200%3B%0A%20%20%20%20margin%3A%200%3B%0A%20%20%20%20color%3A%20%23ffffff%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20flex%2Ddirection%3Arow%3B%0A%7D%0A%0A%23headerBlock1%0A%7B%0A%20%20%20%20width%3A%2050%25%3B%0A%20%20%20%20display%3Aflex%3B%0A%20%20%20%20align%2Ditems%3Acenter%3B%0A%7D%0A%0Aa%23headerTitle%0A%7B%0A%20%20%20%20font%2Dsize%3A%202%2E25em%3B%0A%20%20%20%20font%2Dfamily%3A%20Lobster%2CTahoma%2CArial%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20padding%2Dleft%3A32px%3B%0A%20%20%20%20padding%2Dright%3A32px%3B%0A%7D%0A%0A%23headerSearch%0A%7B%0A%20%20%20%20display%3A%20inline%2Dblock%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20width%3A%20300px%3B%0A%7D%0A%0Ainput%5Btype%3Dsearch%5D%23mySearch%0A%7B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20border%2Dradius%3A%206px%3B%0A%20%20%20%20border%3A%201px%20solid%20black%3B%0A%20%20%20%20padding%3A12px%3B%0A%7D%0A%0A%23headerBlock2%0A%7B%0A%20%20%20%20width%3A%2050%25%3B%0A%20%20%20%20margin%2Dleft%3A%20auto%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20justify%2Dcontent%3A%20flex%2Dend%3B%0A%7D%0A%0A%0Aa%23headerTitle%3Ahover%0A%7B%0A%20%20%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Aa%2EheaderLinks%0A%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20padding%2Dtop%3A%2014px%3B%0A%20%20%20%20padding%2Dbottom%3A%2014px%3B%0A%20%20%20%20padding%2Dleft%3A%2014px%3B%0A%20%20%20%20padding%2Dright%3A%2014px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20transition%3A%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%7D%0A%0A%23footer%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%2864%2C64%2C64%2C0%2E25%29%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20justify%2Dcontent%3A%20space%2Dbetween%3B%0A%20%20%20%20flex%2Dwrap%3A%20wrap%3B%0A%7D%0A%0A%23footer%20div%0A%7B%0A%20%20%20%20padding%2Dtop%3A10px%3B%0A%20%20%20%20padding%2Dbottom%3A0px%3B%0A%20%20%20%20padding%2Dleft%3A16px%3B%0A%20%20%20%20padding%2Dright%3A16px%3B%0A%7D%0A%0A%23footer%20div%20ul%0A%7B%0A%20%20%20%20margin%2Dleft%3A0px%3B%0A%20%20%20%20padding%2Dleft%3A16px%3B%0A%7D%0A%0A%23footer%20div%20ul%20li%0A%7B%0A%20%20%20%20padding%2Dtop%3A6px%3B%0A%7D%0A%0Aa%2Eregular%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Ddecoration%3Anone%0A%7D%0A%0Aa%2Eregular%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Aa%2Euser%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Ddecoration%3Anone%3B%0A%7D%0A%0Aa%2Euser%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%20%20text%2Ddecoration%3A%20underline%3B%0A%7D%0A%0A%2EuiButton%0A%7B%0A%20%20%20%20border%3A%20none%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20width%3A%2022px%3B%0A%20%20%20%20height%3A%2022px%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%7D%0A%0A%2EuiButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%201px%201px%20%23808080%2C%200px%200px%201px%201px%20%23808080%3B%0A%7D%0A%0A%2EuiDivBUtton%0A%7B%0A%20%20%20%20cursor%3Apointer%3B%0A%7D%0A%0A%2EuiDivBUtton%3Ahover%0A%7B%0A%20%20%20%20color%3A%20%23ffffff%3B%0A%7D%0A%0A%0A%2Edialog%0A%7B%0A%20%20%20%20display%3A%20block%3B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20border%3A1px%20solid%20%23000%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Dalign%3Aleft%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20box%2Dshadow%3A4px%204px%206px%200px%20rgba%280%2C0%2C0%2C0%2E5%29%3B%0A%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20z%2Dindex%3A1000%3B%0A%20%20%20%20visibility%3A%20hidden%3B%0A%20%20%20%20opacity%3A0%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20transition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%7D%0A%0A%2EdialogHeader%0A%7B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A32px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20background%2Dcolor%3A%20%23808080%3B%0A%20%20%20%20cursor%3Amove%3B%0A%7D%0A%0A%2EdialogTitle%0A%7B%0A%20%20%20%20left%3A%2012px%3B%0A%20%20%20%20top%3A%204px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20color%3A%23000000%3B%0A%20%20%20%20font%2Dsize%3A1%2E5em%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20user%2Dselect%3A%20none%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dnone%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20none%3B%0A%7D%0A%0A%2EdialogOverlay%0A%7B%0A%20%20%20%20z%2Dindex%3A1000%3B%0A%0A%20%20%20%20visibility%3A%20hidden%3B%0A%20%20%20%20opacity%3A0%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20transition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20position%3Aabsolute%3B%0A%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C%2E4%29%3B%0A%7D%0A%0A%2EviewsIcon%2C%20%2ElikesIcon%0A%7B%0A%20%20%20%20border%3A%20none%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20display%3Ainline%2Dblock%3B%0A%20%20%20%20background%2Drepeat%3Ano%2Drepeat%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20padding%2Dright%3A%202px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20position%3Arelative%3B%0A%7D%0A%0A%2EuserPictureSmall%0A%7B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%3A%201px%20solid%20%23000000%3B%0A%20%20%20%20width%3A32px%3B%0A%20%20%20%20height%3A32px%3B%0A%7D%0A%0A%2EdialogCloseButton%0A%7B%0A%20%20%20%20right%3A8px%3B%0A%20%20%20%20top%3A%204px%3B%0A%20%20%20%20width%3A22px%3B%0A%20%20%20%20height%3A22px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20background%2Dimage%3A%20url%28%22%2Fimg%2Fclose%2Epng%22%29%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%7D%0A%0A%2EdialogCloseButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%204px%202px%20%23ffffff%2C%200px%200px%204px%202px%20%23ffffff%3B%0A%7D%0A%0A%2EdialogContentButtons%0A%7B%0A%20%20%20%20%20padding%3A0%3B%0A%20%20%20%20%20border%3A0%3B%0A%20%20%20%20%20text%2Dalign%3A%20justify%3B%0A%20%20%20%20%20left%3A%2024px%3B%0A%20%20%20%20%20bottom%3A40px%3B%0A%20%20%20%20%20position%3Aabsolute%3B%0A%7D%0A%0A%2EdialogButton%0A%7B%0A%20%20%20%20text%2Dalign%3A%20center%3B%0A%20%20%20%20vertical%2Dalign%3A%20middle%3B%0A%20%20%20%20display%3A%20inline%2Dblock%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20padding%2Dbottom%3A5px%3B%0A%20%20%20%20padding%2Dtop%3A4px%3B%0A%20%20%20%20padding%2Dleft%3A%208px%3B%0A%20%20%20%20padding%2Dright%3A%208px%3B%0A%20%20%20%20margin%2Dleft%3A4px%3B%0A%20%20%20%20margin%2Dright%3A4px%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20color%3A%23000000%3B%0A%20%20%20%20width%3A%2080px%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20%20%20%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%20%20%20%20transition%3A%20%20%20%20%20%20%20%20%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%7D%0A%0A%2EdialogButton%3Ahover%0A%7B%0A%20%20background%2Dcolor%3A%23808080%3B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0A%2EdialogCloseButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%204px%202px%20%23ffffff%2C%200px%200px%204px%202px%20%23ffffff%3B%0A%7D%0A%0A%2EdialogContent%0A%7B%0A%20%20%20%20color%3A%20inherit%3B%0A%20%20%20%20overflow%3A%20auto%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%2032px%3B%0A%20%20%20%20position%3Aabsolute%0A%7D%0A%0A%2EdialogContentBody%0A%7B%0A%20%20%20%20color%3A%20inherit%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3Aauto%3B%0A%20%20%20%20padding%2Dtop%3A24px%3B%0A%20%20%20%20padding%2Dbottom%3A24px%3B%0A%20%20%20%20padding%2Dleft%3A24px%3B%0A%20%20%20%20padding%2Dright%3A24px%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%7D%0A%0A%2EformButton%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%09color%3A%23ffffff%3B%0A%09border%3Anone%3B%0A%20%20%20%20text%2Dalign%3Acenter%3B%0A%09background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%09padding%2Dleft%3A8px%3B%0A%09padding%2Dright%3A8px%3B%0A%09padding%2Dtop%3A4px%3B%0A%09padding%2Dbottom%3A4px%3B%0A%20%20%20%20cursor%3Apointer%3B%0A%20%20%20%20min%2Dwidth%3A80px%3B%0A%7D%0A%2EformInput%20%7B%0A%20%20%20%20border%2Dradius%3A%206px%3B%0A%20%20%20%20border%3A%201px%20solid%20black%3B%0A%20%20%20%20padding%3A%204px%3B%0A%20%20%20%20border%3A%20none%3B%0A%7D%0A%2EformButton%3Ahover%20%7B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%7D%0A%2EformButton%3Adisabled%0A%7B%0A%09color%3A%23b0b0b0%3B%0A%09background%2Dcolor%3A%23808080%3B%0A%7D%0A%0A%2EformButtonSmall%0A%7B%0A%20%20%20%20color%3A%23ffffff%3B%0A%20%20%20%20border%3Anone%3B%0A%20%20%20%20text%2Dalign%3Acenter%3B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20padding%2Dleft%3A2px%3B%0A%20%20%20%20padding%2Dright%3A2px%3B%0A%20%20%20%20padding%2Dtop%3A2px%3B%0A%20%20%20%20padding%2Dbottom%3A2px%3B%0A%20%20%20%20cursor%3Apointer%3B%0A%20%20%20%20min%2Dwidth%3A40px%3B%0A%7D%0A%0A%2EformButtonSmall%3Ahover%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%7D%0A%0A%2EformButtonSmall%3Adisabled%0A%7B%0A%20%20%20%20color%3A%23b0b0b0%3B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%7D%0A%0A%2EformButtonSmall%2Edisabled2%2C%0A%2EformButton%2Edisabled2%20%7B%20color%3A%23b0b0b0%3B%20background%2Dcolor%3A%23808080%3B%20pointer%2Devents%3A%20none%3B%20%7D%0A%0A%2EinputForm%0A%7B%0A%20%20%20%20padding%2Dleft%3A2%25%3B%0A%20%20%20%20padding%2Dright%3A2%25%3B%0A%20%20%20%20resize%3A%20none%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20background%2Dcolor%3A%23e0e0e0%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20border%3A%201px%20solid%20%23808080%3B%0A%20%20%20%20color%3Ainherit%3B%0A%7D%0A%0A%2EinputForm%3Afocus%0A%7B%0A%20%20%20%20border%3A%201px%20solid%20%23AFCDD8%3B%0A%20%20%20%20background%2Dcolor%3A%20%23EBF2F4%3B%0A%7D%0A%0A%2EtransparentPannel%0A%7B%0A%20%20%20%20background%2Dcolor%3Argba%2864%2C64%2C64%2C0%2E1%29%3B%0A%20%20%20%20padding%3A16px%3B%0A%7D%0A%0A%2Ecomment%2C%20%2EcommentSelf%2C%20%2EcommentNew%0A%7B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20margin%2Dleft%3A%200px%3B%0A%20%20%20%20margin%2Dright%3A%200px%3B%0A%20%20%20%20margin%2Dtop%3A%200px%3B%0A%20%20%20%20margin%2Dbottom%3A%206px%3B%0A%0A%20%20%20%20padding%3A%2014px%3B%0A%20%20%20%20display%3A%20grid%3B%0A%20%20%20%20grid%2Dtemplate%2Dcolumns%3A%2032px%20auto%208px%3B%0A%20%20%20%20grid%2Dtemplate%2Drows%3A%201fr%3B%0A%20%20%20%20grid%2Dgap%3A8px%3B%0A%7D%0A%0A%2Ecomment%3Anth%2Dchild%28even%29%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%2864%2C64%2C64%2C0%2E1%29%3B%0A%7D%0A%0A%2Ecomment%3Anth%2Dchild%28odd%29%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%28128%2C128%2C128%2C0%2E1%29%3B%0A%7D%0A%0A%2EcommentSelf%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%28240%2C160%2C64%2C0%2E1%29%3B%0A%7D%0A%0A%2EcommentNew%0A%7B%0A%20%20%20%20padding%2Dright%3A%200px%3B%0A%20%20%20%20grid%2Dtemplate%2Dcolumns%3A%2040px%20auto%3B%0A%7D%0A%0A%2EcommentContent%0A%7B%0A%20%20%20%20vertical%2Dalign%3A%20top%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20word%2Dbreak%3A%20break%2Dall%3B%0A%20%20%20%20word%2Dbreak%3A%20break%2Dword%3B%0A%20%20%20%20white%2Dspace%3A%20pre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dmoz%2Dpre%2Dwrap%3B%0A%7D%0A%0A%0A%2F%2A%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%20media%20resolutions%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%20%2A%2F%0A%0A%40media%20screen%20and%20%28max%2Dwidth%3A799px%29%0A%7B%0A%20%20%20%20div%23header%20%7Bflex%2Ddirection%3Acolumn%3B%20%7D%0A%20%20%20%20%23headerBlock1%20%7B%20width%3A100%25%3B%20%7D%0A%20%20%20%20%23headerBlock2%20%7B%20width%3A100%25%3B%20justify%2Dcontent%3A%20space%2Daround%3B%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A200px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A200px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A130px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A10px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A800px%29%20and%20%28max%2Dwidth%3A1279px%29%0A%7B%0A%20%20%20%20body%20%7B%20font%2Dsize%3A%209px%3B%20%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20250px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A250px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A130px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A11px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1280px%29%20and%20%28max%2Dwidth%3A1439px%29%0A%7B%0A%20%20%20%20body%20%7B%20font%2Dsize%3A%2010px%3B%20%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A28px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A180px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A12px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1440px%29%20and%20%28max%2Dwidth%3A1919px%29%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A28px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A180px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A12px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1920px%29%20and%20%28max%2Dwidth%3A2559px%29%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A32px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A220px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A16px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A2560px%29%20%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A32px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A220px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A16px%3B%20%7D%0A%7D%0Abody%0A%7B%0A%20%20%20%20background%2Dimage%3A%20url%28%22%2Fimg%2Fthemes%2Fclassic%2Fbackground%2Ejpg%22%29%3B%0A%7D%0A%3C%2Fstyle%3E%0A%0A%3Cstyle%3E%0Abody%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23000000%3B%0A%20%20%20%20color%3A%20%23c0c0c0%3B%0A%20%20%20%20font%2Dsize%3A12px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ATahoma%2CArial%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%20%20%20%20overflow%3Ahidden%3B%0A%20%20%20%20position%3Aabsolute%3B%0A%20%20%20%20user%2Dselect%3A%20none%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dnone%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20none%3B%0A%7D%0A%0Adiv%23player%0A%7B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%7D%0A%0Adiv%23playerInteraction%0A%7B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%7D%0A%0A%2EplayerCanvas%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%7D%0A%0Adiv%23noWebGL%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20border%2Dradius%3A%204px%204px%200px%200px%3B%0A%20%20%20%20background%2Dcolor%3A%23000000%3B%0A%20%20%20%20visibility%3A%20hidden%3B%0A%7D%0A%0Aimg%23noWebGL%5FShaderImage%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20border%2Dradius%3A%204px%204px%200px%200px%3B%0A%7D%0A%0Aspan%23noWebGL%5FText%0A%7B%0A%20%20%20%20left%3A8px%3B%0A%20%20%20%20font%2Dsize%3A%201%2E5em%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20color%3A%23ff0000%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Adiv%23playerBar%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20bottom%3A%200px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%2030px%3B%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C0%2E8%29%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%0A%20%20%20%20transition%3A%20bottom%201s%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20bottom%201s%3B%20%2F%2A%20Safari%20%2A%2F%0A%7D%0A%0Adiv%23playerBar%2EisVisible%0A%7B%0A%20%20%20%20bottom%3A0px%3B%0A%7D%0A%0Adiv%23playerBar%2EisNotVisible%0A%7B%0A%20%20%20%20bottom%3A%2D31px%3B%0A%7D%0A%0A%2EmyFull%0A%7B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0A%2EplayerCanvas%5Ffull%2Dscreen%2C%0A%2EplayerCanvas%3Afull%2Dscreen%2C%0A%2EplayerCanvas%3Afullscreen%2C%0A%2EplayerCanvas%3A%2Dwebkit%2Dfull%2Dscreen%2C%0A%2EplayerCanvas%3A%2Dmoz%2Dfull%2Dscreen%0A%7B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0A%0Adiv%23shaderInfo%0A%7B%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C0%2E8%29%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%2030px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%0A%20%20%20%20transition%3A%20top%201s%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20top%201s%3B%20%2F%2A%20Safari%20%2A%2F%0A%7D%0A%0Adiv%23shaderInfo%2EisVisible%0A%7B%0A%20%20%20%20top%3A0px%3B%0A%7D%0Adiv%23shaderInfo%2EisNotVisible%0A%7B%0A%20%20%20%20top%3A%2D31px%3B%0A%7D%0A%0Aa%2EshaderTitle%0A%7B%0A%20%20%20%20font%2Dsize%3A18px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20color%3A%20%23c0c0c0%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20margin%2Dleft%3A6px%3B%0A%20%20%20%20margin%2Dright%3A6px%3B%0A%7D%0A%0Aa%2EshaderTitle%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0A%0Adiv%23shaderStats%0A%7B%0A%20%20%20%20top%3A%208px%3B%0A%20%20%20%20right%3A%204px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%2Dleft%3A0%3B%0A%20%20%20%20padding%2Dright%3A0%3B%0A%20%20%20%20margin%2Dleft%3A0%3B%0A%20%20%20%20margin%2Dright%3A0%3B%0A%7D%0A%0Adiv%23shaderLike%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%20150px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Aa%2EshadertoyLink%0A%7B%0A%20%20%20%20color%3A%23c0c0c0%3B%0A%20%20%20%20font%2Dsize%3A16px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dweight%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ALobster%2CTahoma%2CArial%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20top%3A%205px%3B%0A%20%20%20%20right%3A%206px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%2Dleft%3A0%3B%0A%20%20%20%20padding%2Dright%3A0%3B%0A%20%20%20%20margin%2Dleft%3A0%3B%0A%20%20%20%20margin%2Dright%3A0%3B%0A%20%20%20%20text%2Ddecoration%3Anone%3B%0A%0A%20%20%20%20user%2Dselect%3A%20text%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dtext%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20text%3B%0A%7D%0Aa%2EshadertoyLink%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%3C%2Fstyle%3E%0A%0A%20%20%20%20%3Cscript%3Evar%20gShaderID%3D%223fSXRW%22%3Bvar%20gInvisIfFail%3Dnull%3Bvar%20gTime%3D%2210%22%3Bvar%20gShowGui%3Dtrue%3Bvar%20gPaused%3Dtrue%3Bvar%20gMuted%3Dfalse%3B%3C%2Fscript%3E%0A%0A%20%20%20%20%3Cscript%20src%3D%22%2Flib%2FpiLibs%2Ejs%3Fv%3D86%22%3E%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%20src%3D%22%2Fjs%2Feffect%2Ejs%3Fv%3D86%22%3E%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%0A%0Aconst%20kMaxCompileTime%20%3D%2010%2E0%3B%0A%0Afunction%20iReportCrash%28shaderID%29%0A%7B%0A%20%20%20%20let%20req%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20req%2Eonload%20%3D%20function%20%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20let%20jsn%20%3D%20req%2Eresponse%3B%0A%20%20%20%20%20%20%20%20if%20%28jsn%20%3D%3D%3D%20null%29%20return%3B%0A%20%20%20%20%20%20%20%20if%20%28jsn%2Eresult%20%3D%3D%3D%200%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20yep%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%3B%0A%20%20%20%20req%2Eopen%28%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%29%3B%0A%20%20%20%20req%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20req%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20req%2Esend%28%20%22s%3D%22%20%2B%20shaderID%20%2B%20%22%26r%3D2%22%20%29%3B%0A%7D%0A%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%3B%0A%0Aclass%20SoundCloud%20%0A%7B%0A%20%20%20%20resolve%28url%2C%20callback%2C%20errcallback%29%20%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20url2%20%3D%20%22surl%3D%22%20%2B%20url%3B%0A%20%20%20%20%20%20%20%20var%20mHttpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eopen%28%20%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%20%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eonload%20%3D%20function%28%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20jsn%20%3D%20mHttpReq%2Eresponse%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20jsn%3D%3D%3Dnull%20%29%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20jsn%2Eresult%21%3D%3D0%20%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20callback%28JSON%2Eparse%28jsn%2Esoundcloud%29%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eonerror%20%3D%20function%28%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Esend%28%20url2%20%29%3B%0A%20%20%20%20%7D%0A%7D%0A%0Aconst%20SC%20%3D%20new%20SoundCloud%28%29%3B%0A%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%0A%0Avar%20gShaderToy%20%3D%20null%3B%0A%0Afunction%20ShaderToy%28%20parentElement%20%29%0A%7B%0A%20%20%20%20if%28%20parentElement%3D%3D%3Dnull%20%29%20return%3B%0A%0A%20%20%20%20this%2EmAudioContext%20%3D%20null%3B%0A%20%20%20%20this%2EmCreated%20%3D%20false%3B%0A%20%20%20%20this%2EmHttpReq%20%3D%20null%3B%0A%20%20%20%20this%2EmEffect%20%3D%20null%3B%0A%20%20%20%20this%2EmTo%20%3D%20null%3B%0A%20%20%20%20this%2EmTOffset%20%3D%20gTime%20%2A%201000%3B%0A%20%20%20%20this%2EmCanvas%20%3D%20null%3B%0A%20%20%20%20this%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20null%3B%0A%20%20%20%20this%2EmIsPaused%20%3D%20gPaused%3B%0A%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20this%2EmInfo%20%3D%20null%3B%0A%20%20%20%20this%2EmCode%20%3D%20null%3B%0A%0A%20%20%20%20this%2EmCanvas%20%3D%20document%2EgetElementById%28%22demogl%22%29%3B%0A%20%20%20%20this%2EmCanvas%2EtabIndex%20%3D%20%220%22%3B%0A%0A%20%20%20%20var%20ww%20%3D%20parentElement%2EoffsetWidth%3B%0A%20%20%20%20var%20hh%20%3D%20parentElement%2EoffsetHeight%3B%0A%0A%20%20%20%20var%20me%20%3D%20this%3B%0A%20%20%20%20this%2EmCanvas%2Ewidth%20%20%3D%20ww%3B%0A%20%20%20%20this%2EmCanvas%2Eheight%20%3D%20hh%3B%0A%0A%20%20%20%20this%2EmHttpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20this%2EmTo%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20this%2EmTf%20%3D%20this%2EmTOffset%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20this%2EmTo%3B%0A%20%20%20%20this%2EmMouseIsDown%20%3D%20false%3B%0A%20%20%20%20this%2EmMouseOriX%20%3D%200%3B%0A%20%20%20%20this%2EmMouseOriY%20%3D%200%3B%0A%20%20%20%20this%2EmMousePosX%20%3D%200%3B%0A%20%20%20%20this%2EmMousePosY%20%3D%200%3B%0A%0A%0A%20%20%20%20%2F%2F%20%2D%2D%2D%20audio%20context%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0A%20%20%20%20this%2EmAudioContext%20%3D%20piCreateAudioContext%28%29%3B%0A%0A%20%20%20%20if%28%20this%2EmAudioContext%3D%3Dnull%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%2F%2Falert%28%20%22no%20audio%21%22%20%29%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eonmousedown%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20pos%20%3D%20piGetCoords%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriX%20%3D%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%28ev%2EpageX%20%2D%20pos%2EmX%29%2Ame%2EmCanvas%2Ewidth%2Fme%2EmCanvas%2EoffsetWidth%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriY%20%3D%20me%2EmCanvas%2Eheight%20%2D%20%28ev%2EpageY%20%2D%20pos%2EmY%29%2Ame%2EmCanvas%2Eheight%2Fme%2EmCanvas%2EoffsetHeight%3B%0A%20%20%20%20%20%20%20%20me%2EmMousePosX%20%3D%20me%2EmMouseOriX%3B%0A%20%20%20%20%20%20%20%20me%2EmMousePosY%20%3D%20me%2EmMouseOriY%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseIsDown%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonmousemove%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmMouseIsDown%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20pos%20%3D%20piGetCoords%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmMousePosX%20%3D%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%28ev%2EpageX%20%2D%20pos%2EmX%29%2Ame%2EmCanvas%2Ewidth%2Fme%2EmCanvas%2EoffsetWidth%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmMousePosY%20%3D%20me%2EmCanvas%2Eheight%20%2D%20%28ev%2EpageY%20%2D%20pos%2EmY%29%2Ame%2EmCanvas%2Eheight%2Fme%2EmCanvas%2EoffsetHeight%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonmouseup%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmMouseIsDown%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriX%20%3D%20%2DMath%2Eabs%28%20me%2EmMouseOriX%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriY%20%3D%20%2DMath%2Eabs%28%20me%2EmMouseOriY%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eonkeydown%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmEffect%2ESetKeyDown%28%200%2C%20ev%2EkeyCode%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonkeyup%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmEffect%2ESetKeyUp%28%200%2C%20ev%2EkeyCode%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20document%2EgetElementById%28%22myResetButton%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EresetTime%28%29%3B%0A%20%20%20%20%7D%0A%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EpauseTime%28%29%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eondblclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20piIsFullScreen%28%29%3D%3Dfalse%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20piRequestFullScreen%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20piExitFullScreen%28%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%0A%20%20%20%20document%2EgetElementById%28%22myFullScreen%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20piRequestFullScreen%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%7D%0A%0A%20%20%20%20var%20resizeCB%20%3D%20function%20%28xres%2C%20yres%29%20%7B%20me%2EmForceFrame%20%3D%20true%3B%20%7D%3B%0A%20%20%20%20var%20crashCB%20%3D%20function%20%28%29%20%7B%20%2F%2AiReportCrash%28gShaderID%29%3B%2A%2F%20%7D%3B%0A%20%20%20%20this%2EmEffect%20%3D%20new%20Effect%28null%2C%20this%2EmAudioContext%2C%20this%2EmCanvas%2C%20this%2ERefreshTexturThumbail%2C%20this%2C%20gMuted%2C%20false%2C%20resizeCB%2C%20crashCB%20%29%3B%0A%20%20%20%20this%2EmCreated%20%3D%20true%3B%0A%0A%7D%0A%0AShaderToy%2Eprototype%2EstartRendering%20%3D%20function%28%29%0A%7B%0A%20%20%20%20var%20me%20%3D%20this%3B%0A%0A%20%20%20%20function%20renderLoop2%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20requestAnimFrame%28%20renderLoop2%20%29%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%26%26%20%21me%2EmForceFrame%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmEffect%2EUpdateInputs%28%200%2C%20false%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20return%3B%0A%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20me%2EmForceFrame%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20var%20time%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20%20%20%20%20var%20ltime%20%3D%20me%2EmTOffset%20%2B%20time%20%2D%20me%2EmTo%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20ltime%20%3D%20me%2EmTf%3B%20else%20me%2EmTf%20%3D%20ltime%3B%0A%0A%20%20%20%20%20%20%20%20var%20dtime%20%3D%201000%2E0%20%2F%2060%2E0%3B%0A%0A%20%20%20%20%20%20%20%20me%2EmEffect%2EPaint%28ltime%2F1000%2E0%2C%20dtime%2F1000%2E0%2C%2060%2C%20me%2EmMouseOriX%2C%20me%2EmMouseOriY%2C%20me%2EmMousePosX%2C%20me%2EmMousePosY%2C%20me%2EmIsPaused%20%29%3B%0A%0A%20%20%20%20%20%20%20%20me%2EmFpsFrame%2B%2B%3B%0A%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myTime%22%29%2EtextContent%20%3D%20%28ltime%2F1000%2E0%29%2EtoFixed%282%29%3B%0A%20%20%20%20%20%20%20%20if%28%20%28time%2Dme%2EmFpsTo%29%3E1000%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20ffps%20%3D%201000%2E0%20%2A%20me%2EmFpsFrame%20%2F%20%28time%2Dme%2EmFpsTo%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myFramerate%22%29%2EtextContent%20%3D%20ffps%2EtoFixed%281%29%20%2B%20%22%20fps%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmFpsTo%20%3D%20time%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%0A%20%20%20%20renderLoop2%28%29%3B%0A%7D%0A%0A%2F%2F%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0AShaderToy%2Eprototype%2EStop%20%3D%20function%28%29%0A%7B%0A%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Estyle%2Ebackground%3D%22url%28%27%2Fimg%2FplayEmbed%2Epng%27%29%22%3B%0A%20%20%20%20this%2EmIsPaused%20%3D%20true%3B%0A%20%20%20%20this%2EmEffect%2EStopOutputs%28%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EpauseTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20var%20time%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20if%28%20%21this%2EmIsPaused%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20this%2EStop%28%29%3B%0A%20%20%20%20%20%7D%0A%20%20%20%20else%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Estyle%2Ebackground%3D%22url%28%27%2Fimg%2FpauseEmbed%2Epng%27%29%22%3B%0A%20%20%20%20%20%20%20%20this%2EmTOffset%20%3D%20this%2EmTf%3B%0A%20%20%20%20%20%20%20%20this%2EmTo%20%3D%20time%3B%0A%20%20%20%20%20%20%20%20this%2EmIsPaused%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20this%2EmEffect%2EResumeOutputs%28%29%3B%0A%20%20%20%20%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%7D%0A%7D%0A%0AShaderToy%2Eprototype%2EresetTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20this%2EmTOffset%20%3D%200%3B%0A%20%20%20%20this%2EmTo%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20this%2EmTf%20%3D%200%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20this%2EmTo%3B%0A%20%20%20%20this%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20this%2EmEffect%2EResetTime%28%29%3B%0A%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%7D%0A%0A%0AShaderToy%2Eprototype%2EPauseInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EPauseInput%28%200%2C%20id%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EMuteInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EMuteInput%28%200%2C%20id%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ERewindInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ERewindInput%28%200%2C%20id%20%29%3B%0A%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%7D%0A%0AShaderToy%2Eprototype%2ESetTexture%20%3D%20function%28%20slot%2C%20url%20%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ENewTexture%28%200%2C%20slot%2C%20url%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ERefreshTexturThumbail%20%3D%20function%28%20myself%2C%20slot%2C%20img%2C%20forceFrame%2C%20gui%2C%20guiID%2C%20time%20%29%0A%7B%0A%20%20myself%2EmForceFrame%20%3D%20forceFrame%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EGetTotalCompilationTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EGetTotalCompilationTime%28%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ELoad%20%3D%20function%28%20jsn%20%29%0A%7B%0A%20%20%20%20try%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20res%20%3D%20this%2EmEffect%2ELoad%28%20jsn%2C%20false%20%29%3B%0A%20%20%20%20%20%20%20%20this%2EmCode%20%3D%20res%2EmShader%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20res%2EmFailed%3D%3D%3Dfalse%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2Fthis%2EresetTime%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20this%2EmInfo%20%3D%20jsn%2Einfo%3B%0A%0A%20%20%20%20%20%20%20%20return%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20mFailed%3A%20false%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mDate%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Edate%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mViewed%20%20%20%20%20%20%3A%20jsn%2Einfo%2Eviewed%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mName%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Ename%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mUserName%20%20%20%20%3A%20jsn%2Einfo%2Eusername%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mDescription%20%3A%20jsn%2Einfo%2Edescription%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mLikes%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Elikes%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mPublished%20%20%20%3A%20jsn%2Einfo%2Epublished%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mHasLiked%20%20%20%20%3A%20jsn%2Einfo%2Ehasliked%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mTags%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Etags%20%7D%3B%0A%0A%20%20%20%20%7D%0A%20%20%20%20catch%28%20e%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20return%20%7B%20mFailed%3Atrue%20%7D%3B%0A%20%20%20%20%7D%0A%7D%0A%0AShaderToy%2Eprototype%2ECompile%20%3D%20function%20%28onResolve%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ECompile%28true%2C%20onResolve%29%3B%0A%7D%0A%0Afunction%20iCompileAndStart%28%20viewerParent%2C%20jsnShader%20%29%0A%7B%0A%20%20%20%20gShaderToy%20%3D%20new%20ShaderToy%28%20viewerParent%2C%20null%20%29%3B%0A%20%20%20%20if%28%20%21gShaderToy%2EmCreated%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20gInvisIfFail%21%3D%3Dnull%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20var%20div%20%3D%20document%2EcreateElement%28%22img%22%29%3B%0A%20%20%20%20%20%20%20%20%20%20div%2Esrc%20%3D%20gInvisIfFail%3B%0A%20%20%20%20%20%20%20%20%20%20var%20root%20%3D%20document%2EgetElementsByTagName%28%20%22body%22%20%29%5B0%5D%3B%0A%20%20%20%20%20%20%20%20%20%20root%2EreplaceChild%28%20div%2C%20viewerParent%20%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20return%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20var%20gRes%20%3D%20gShaderToy%2ELoad%28jsnShader%5B0%5D%29%0A%20%20%20%20if%20%28gRes%2EmFailed%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20gShaderToy%2EpauseTime%28%29%3B%0A%20%20%20%20%20%20%20%20gShaderToy%2EresetTime%28%29%3B%0A%20%20%20%20%7D%0A%20%20%20%20else%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20let%20st%20%3D%20document%2EgetElementById%28%22shaderTitle%22%29%3B%0A%20%20%20%20%20%20%20%20let%20str%20%3D%20%22%3Ca%20class%3D%5C%22shaderTitle%5C%22%20target%3D%5C%22%5Fblank%5C%22%20href%3D%5C%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%2Fview%2F%22%20%2B%20gShaderID%20%2B%20%22%5C%22%3E%22%20%2B%20htmlEntities%28gRes%2EmName%29%20%2B%20%22%3C%2Fa%3E%22%3B%0A%20%20%20%20%20%20%20%20str%20%2B%3D%20%22%3Cspan%3Eby%20%22%20%2B%20htmlEntities%28gRes%2EmUserName%29%20%2B%20%22%20in%20%22%20%2B%20piGetTime%28gRes%2EmDate%29%20%2B%20%22%3C%2Fspan%3E%22%3B%0A%20%20%20%20%20%20%20%20st%2EinnerHTML%20%3D%20str%3B%0A%0A%20%20%20%20%20%20%20%20let%20shaderStats%20%3D%20document%2EgetElementById%28%22shaderStats%22%29%3B%0A%20%20%20%20%20%20%20%20shaderStats%2EinnerHTML%20%3D%20%22%3Cimg%20src%3D%27%2Fimg%2FviewsEmbed%2Epng%27%20class%3D%27viewsIcon%27%3E%3C%2Fimg%3E%3Cspan%3E%22%20%2B%20gRes%2EmViewed%20%2B%20%22%3C%2Fspan%3E%20%20%20%20%26nbsp%3B%26nbsp%3B%20%20%3Cimg%20src%3D%27%2Fimg%2FlikesEmbed%2Epng%27%20class%3D%27likesIcon%27%3E%3C%2Fimg%3E%3Cspan%3E%22%20%2B%20gRes%2EmLikes%20%2B%20%22%3C%2Fspan%3E%22%3B%0A%0A%0A%20%20%20%20%20%20%20%20gShaderToy%2ECompile%28%20function%20%28worked%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28%21worked%29%20return%3B%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2A%0A%20%20%20%20%20%20%20%20%20%20%20%20let%20compilationTime%20%3D%20gShaderToy%2EGetTotalCompilationTime%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28compilationTime%20%3E%20kMaxCompileTime%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20iReportCrash%28gShaderID%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2A%2F%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28gShaderToy%2EmIsPaused%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20gShaderToy%2EStop%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20gShaderToy%2EstartRendering%28%29%3B%0A%20%20%20%20%20%20%20%20%7D%29%3B%0A%20%20%20%20%7D%0A%0A%7D%0A%0Afunction%20watchInit%28%29%0A%7B%0A%20%20%20%20%20%20%2F%2F%2D%2D%20shadertoy%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%20%20%20%20var%20viewerParent%20%3D%20document%2EgetElementById%28%22player%22%29%3B%0A%0A%20%20%20%20if%28%20gShowGui%3D%3D%3Dfalse%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20viewerParent%2EaddEventListener%28%20%22mouseover%22%2C%20function%28e%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isVisible%27%3B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isVisible%27%3B%0A%20%20%20%20%7D%2C%20true%20%29%3B%0A%0A%20%20%20%20viewerParent%2EaddEventListener%28%20%22mouseout%22%2C%20function%28e%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20var%20tt%20%3D%20e%2ErelatedTarget%20%7C%7C%20e%2EtoElement%3B%0A%0A%20%20%20%20%20%20%2F%2Fconsole%2Elog%28%20%22OUT%20%20%20t%3A%20%22%20%2B%20e%2Etarget%2Eid%20%2B%20%22%20%20%20%20ct%3A%20%22%20%2B%20e%2EcurrentTarget%2Eid%20%2B%20%22%20%20%20%20this%3A%20%22%20%2B%20this%2Eid%20%2B%20%22%20%20%20%20target%3A%20%22%20%2B%20%28%28tt%3D%3Dnull%29%3F%22none%22%3Att%2Eid%29%20%29%3B%0A%20%20%20%20%20%20if%28%20tt%21%3D%3Dnull%20%29%20return%3B%0A%0A%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%7D%2C%20true%20%29%3B%0A%0A%20%20%20%20document%2Ebody%2EaddEventListener%28%20%22keydown%22%2C%20function%28e%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20var%20ele%20%3D%20piGetSourceElement%28e%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20if%28%20e%2EkeyCode%3D%3D%3D8%20%26%26%20ele%3D%3D%3Ddocument%2Ebody%20%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20e%2EpreventDefault%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%20%29%3B%0A%0A%0A%20%20%20%20%2F%2F%2D%2D%20get%20info%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0A%20%20%20%20var%20httpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20httpReq%2Eopen%28%20%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%20%29%3B%0A%20%20%20%20httpReq%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20httpReq%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20var%20str%20%3D%20%22%7B%20%5C%22shaders%5C%22%20%3A%20%5B%5C%22%22%20%2B%20gShaderID%20%2B%20%22%5C%22%5D%20%7D%22%3B%0A%20%20%20%20str%20%3D%20%22s%3D%22%20%2B%20encodeURIComponent%28str%29%20%2B%20%22%26nt%3D0%26nl%3D0%26np%3D0%22%3B%3B%0A%20%20%20%20httpReq%2Eonload%20%3D%20function%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20jsnShader%20%3D%20httpReq%2Eresponse%3B%0A%0A%20%20%20%20%20%20%20%20if%20%28jsnShader%5B0%5D%2Einfo%2EusePreview%20%3D%3D%3D%201%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20let%20url%20%3D%20%22%2Fmedia%2Fshaders%2F%22%20%2B%20gShaderID%20%2B%20%22%2Ejpg%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20img%20%3D%20new%20Image%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Estyle%20%3D%20%22width%3A100%25%3B%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Eonload%20%3D%20function%20%28%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20viewerParent%2EappendChild%28img%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Eonerror%20%3D%20function%20%28ev%29%20%7B%20iCompileAndStart%28viewerParent%2CjsnShader%29%3B%20%7D%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Esrc%20%3D%20url%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20iCompileAndStart%28viewerParent%2CjsnShader%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20httpReq%2Esend%28%20str%20%20%29%3B%0A%7D%0A%3C%2Fscript%3E%0A%3C%2Fhead%3E%0A%0A%3Cbody%20onload%3D%22watchInit%28%29%22%3E%0A%0A%3C%21%2D%2D%20content%20%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%2D%2D%3E%0A%0A%3Cdiv%20id%3D%22player%22%3E%0A%20%20%20%20%3Ccanvas%20id%3D%22demogl%22%20class%3D%22playerCanvas%22%3E%3C%2Fcanvas%3E%0A%20%20%20%20%3Cdiv%20id%3D%22noWebGL%22%3E%3Cimg%20id%3D%22noWebGL%5FShaderImage%22%3E%3C%2Fimg%3E%3Cspan%20id%3D%22noWebGL%5FText%22%3ENo%20WebGL%20available%20%3A%28%3C%2Fspan%3E%3C%2Fdiv%3E%0A%0A%0A%20%20%20%20%3Cdiv%20id%3D%22shaderInfo%22%3E%0A%20%20%20%20%20%20%20%20%3Cdiv%20%20%20id%3D%22shaderTitle%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%3Cdiv%20%20%20id%3D%22shaderStats%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fdiv%3E%0A%0A%20%20%20%20%3Cdiv%20id%3D%22playerBar%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myResetButton%22%20class%3D%22uiButton%22%20title%3D%22reset%20time%22%20%20%20%20%20%20style%3D%22left%3A%2016px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FrewindEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myPauseButton%22%20class%3D%22uiButton%22%20title%3D%22pause%2Fresume%22%20%20%20%20style%3D%22left%3A%2044px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FplayEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cspan%20id%3D%22myTime%22%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20style%3D%22left%3A%2088px%3Btop%3A6px%3Bposition%3Aabsolute%3Bmargin%3A0px%3Bpadding%3A0px%3Bfont%3Aitalic%20normal%2014px%20arial%2Cserif%22%3E0%3C%2Fspan%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cspan%20id%3D%22myFramerate%22%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20style%3D%22left%3A164px%3Btop%3A6px%3Bposition%3Aabsolute%3Bmargin%3A0px%3Bpadding%3A0px%3Bfont%3Aitalic%20normal%2014px%20arial%2Cserif%22%3E0%20fps%3C%2Fspan%3E%0A%20%20%20%20%20%20%20%20%20%20%3Ca%20class%3D%22shadertoyLink%22%20href%3D%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%22%20target%3D%22%5Fblank%22%3EShadertoy%3C%2Fa%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myFullScreen%22%20%20class%3D%22uiButton%22%20title%3D%22go%20full%20screen%21%22%20style%3D%22right%3A80px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FfullscreenEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%0A%3Cscript%3E%0A%20%20%20%20%28function%28i%2Cs%2Co%2Cg%2Cr%2Ca%2Cm%29%7Bi%5B%27GoogleAnalyticsObject%27%5D%3Dr%3Bi%5Br%5D%3Di%5Br%5D%7C%7Cfunction%28%29%7B%0A%20%20%20%20%28i%5Br%5D%2Eq%3Di%5Br%5D%2Eq%7C%7C%5B%5D%29%2Epush%28arguments%29%7D%2Ci%5Br%5D%2El%3D1%2Anew%20Date%28%29%3Ba%3Ds%2EcreateElement%28o%29%2C%0A%20%20%20%20m%3Ds%2EgetElementsByTagName%28o%29%5B0%5D%3Ba%2Easync%3D1%3Ba%2Esrc%3Dg%3Bm%2EparentNode%2EinsertBefore%28a%2Cm%29%0A%20%20%20%20%7D%29%28window%2Cdocument%2C%27script%27%2C%27%2F%2Fwww%2Egoogle%2Danalytics%2Ecom%2Fanalytics%2Ejs%27%2C%27ga%27%29%3B%0A%0A%20%20%20%20ga%28%27create%27%2C%20%27UA%2D44068895%2D1%27%2C%20%27shadertoy%2Ecom%27%29%3B%0A%20%20%20%20ga%28%27send%27%2C%20%27pageview%27%29%3B%0A%3C%2Fscript%3E%0A%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A" allowfullscreen>
+</iframe>
+<hr />
+<iframe width="640" height="360" frameborder="0" src="data:text/html; charset=UTF-8;charset=utf-8,%0A%3C%21DOCTYPE%20HTML%3E%0A%3Chtml%20lang%3D%22en%22%3E%0A%3Chead%3E%0A%20%20%20%20%0A%3Cscript%20async%20src%3D%22https%3A%2F%2Fwww%2Egoogletagmanager%2Ecom%2Fgtag%2Fjs%3Fid%3DG%2D7SYLWGZYJ2%22%3E%3C%2Fscript%3E%0A%3Cscript%3E%0A%20%20window%2EdataLayer%20%3D%20window%2EdataLayer%20%7C%7C%20%5B%5D%3B%0A%20%20function%20gtag%28%29%7BdataLayer%2Epush%28arguments%29%3B%7D%0A%20%20gtag%28%27js%27%2C%20new%20Date%28%29%29%3B%0A%0A%20%20gtag%28%27config%27%2C%20%27G%2D7SYLWGZYJ2%27%29%3B%0A%3C%2Fscript%3E%0A%0A%3Ctitle%3EEmbed%20%2D%20Shadertoy%20BETA%3C%2Ftitle%3E%0A%3Cmeta%20charset%3D%22utf%2D8%22%20%2F%3E%0A%3Cmeta%20name%3D%22Keywords%22%20content%3D%22shadertoy%2C%20shader%20toy%2C%20quilez%2C%20inigo%2C%20jeremias%2C%20pol%2C%20fractals%2C%20demoscene%2C%20computer%20graphics%2C%20mathematics%2C%20rendering%2C%20demo%2C%203D%2C%20realtime%2C%20shader%2C%20raytracing%2C%20raymarching%2C%20webgl%2C%20glsl%22%20%2F%3E%0A%3Cmeta%20name%3D%22Description%22%20content%3D%22Build%20shaders%2C%20share%20them%2C%20and%20learn%20from%20the%20best%20community%2E%22%20%2F%3E%0A%3Cmeta%20name%3D%22Author%22%20content%3D%22Beautypi%22%20%2F%3E%0A%3Cmeta%20name%3D%22apple%2Dmobile%2Dweb%2Dapp%2Dcapable%22%20content%3D%22yes%22%20%2F%3E%0A%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice%2Dwidth%2C%20initial%2Dscale%3D1%2E0%22%20%2F%3E%0A%0A%3Clink%20rel%3D%22image%5Fsrc%22%20href%3D%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%2Fimg%2Flogo%2Epng%22%20%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F57%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20sizes%3D%2272x72%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F72%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20sizes%3D%22114x114%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F114%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20href%3D%22%2Fimg%2Ffavicon%2Eico%22%2F%3E%0A%0A%3Cstyle%3E%2A%0A%7B%0A%20%20%20%20box%2Dsizing%3A%20border%2Dbox%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%20%7B%0A%20%20%20%20height%3A%208px%3B%0A%20%20%20%20width%3A%208px%3B%0A%20%20%20%20background%3A%20%23404040%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%2Dthumb%0A%7B%0A%20%20%20%20background%3A%20%23909090%3B%0A%20%20%20%20border%2Dradius%3A%200ex%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%2Dcorner%0A%7B%0A%20%20%20%20background%3A%20%23000%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dinput%2Dplaceholder%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0Ainput%3A%2Dmoz%2Dplaceholder%2C%20textarea%3A%2Dmoz%2Dplaceholder%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0Ainput%2Eplaceholder%2Dtext%2C%20textarea%2Eplaceholder%2Dtext%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0A%0Apre%20%0A%7B%0A%20%20%20%20white%2Dspace%3A%20pre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dmoz%2Dpre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dpre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Do%2Dpre%2Dwrap%3B%0A%20%20%20%20word%2Dwrap%3A%20break%2Dword%3B%0A%7D%0A%0A%40font%2Dface%0A%7B%0A%20%20%20%20font%2Dfamily%3A%20Lobster%3B%0A%20%20%20%20src%3A%20url%28%22%2Fimg%2Flobster%2Eotf%22%29%20format%28%22opentype%22%29%3B%0A%7D%0A%0Adiv%23centerScreen%0A%7B%0A%20%20%20%20left%3A%2050%25%3B%0A%20%20%20%20top%3A%2050%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Aa%2EheaderLinks%3Ahover%0A%7B%0A%20%20%20%20background%2Dcolor%3A%23505050%3B%0A%20%20%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Abody%0A%7B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20font%2Dsize%3A12px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ATahoma%2CArial%3B%0A%20%20%20%20background%2Drepeat%3A%20no%2Drepeat%3B%0A%20%20%20%20%2F%2Fbackground%2Dattachment%3A%20fixed%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20background%2Dcolor%3A%20%23d0d0d0%3B%0A%20%20%20%20background%2Drepeat%3A%20repeat%3B%0A%20%20%20%20user%2Dselect%3A%20text%3B%0A%7D%0A%0Aa%2C%0Aa%3Ahover%2C%0Aa%3Avisited%0A%7B%0A%20%20color%20%3A%20inherit%3B%0A%7D%0A%0Adiv%23content%20%7B%0A%20%20%20%20width%3A%2095%25%3B%0A%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20margin%3A%20auto%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20min%2Dheight%3A%20calc%28100vh%20%2D%2080px%29%3B%0A%7D%0A%0A%0A%2EnotificationCount%0A%7B%0A%20background%2Dcolor%3A%23ff0000%3B%0A%20padding%2Dleft%3A3px%3B%0A%20padding%2Dright%3A1px%3B%0A%20padding%2Dtop%3A1px%3B%0A%20padding%2Dbottom%3A1px%3B%0A%7D%0A%0Adiv%23header%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23404040%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20padding%3A%200%3B%0A%20%20%20%20margin%3A%200%3B%0A%20%20%20%20color%3A%20%23ffffff%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20flex%2Ddirection%3Arow%3B%0A%7D%0A%0A%23headerBlock1%0A%7B%0A%20%20%20%20width%3A%2050%25%3B%0A%20%20%20%20display%3Aflex%3B%0A%20%20%20%20align%2Ditems%3Acenter%3B%0A%7D%0A%0Aa%23headerTitle%0A%7B%0A%20%20%20%20font%2Dsize%3A%202%2E25em%3B%0A%20%20%20%20font%2Dfamily%3A%20Lobster%2CTahoma%2CArial%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20padding%2Dleft%3A32px%3B%0A%20%20%20%20padding%2Dright%3A32px%3B%0A%7D%0A%0A%23headerSearch%0A%7B%0A%20%20%20%20display%3A%20inline%2Dblock%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20width%3A%20300px%3B%0A%7D%0A%0Ainput%5Btype%3Dsearch%5D%23mySearch%0A%7B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20border%2Dradius%3A%206px%3B%0A%20%20%20%20border%3A%201px%20solid%20black%3B%0A%20%20%20%20padding%3A12px%3B%0A%7D%0A%0A%23headerBlock2%0A%7B%0A%20%20%20%20width%3A%2050%25%3B%0A%20%20%20%20margin%2Dleft%3A%20auto%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20justify%2Dcontent%3A%20flex%2Dend%3B%0A%7D%0A%0A%0Aa%23headerTitle%3Ahover%0A%7B%0A%20%20%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Aa%2EheaderLinks%0A%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20padding%2Dtop%3A%2014px%3B%0A%20%20%20%20padding%2Dbottom%3A%2014px%3B%0A%20%20%20%20padding%2Dleft%3A%2014px%3B%0A%20%20%20%20padding%2Dright%3A%2014px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20transition%3A%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%7D%0A%0A%23footer%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%2864%2C64%2C64%2C0%2E25%29%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20justify%2Dcontent%3A%20space%2Dbetween%3B%0A%20%20%20%20flex%2Dwrap%3A%20wrap%3B%0A%7D%0A%0A%23footer%20div%0A%7B%0A%20%20%20%20padding%2Dtop%3A10px%3B%0A%20%20%20%20padding%2Dbottom%3A0px%3B%0A%20%20%20%20padding%2Dleft%3A16px%3B%0A%20%20%20%20padding%2Dright%3A16px%3B%0A%7D%0A%0A%23footer%20div%20ul%0A%7B%0A%20%20%20%20margin%2Dleft%3A0px%3B%0A%20%20%20%20padding%2Dleft%3A16px%3B%0A%7D%0A%0A%23footer%20div%20ul%20li%0A%7B%0A%20%20%20%20padding%2Dtop%3A6px%3B%0A%7D%0A%0Aa%2Eregular%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Ddecoration%3Anone%0A%7D%0A%0Aa%2Eregular%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Aa%2Euser%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Ddecoration%3Anone%3B%0A%7D%0A%0Aa%2Euser%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%20%20text%2Ddecoration%3A%20underline%3B%0A%7D%0A%0A%2EuiButton%0A%7B%0A%20%20%20%20border%3A%20none%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20width%3A%2022px%3B%0A%20%20%20%20height%3A%2022px%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%7D%0A%0A%2EuiButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%201px%201px%20%23808080%2C%200px%200px%201px%201px%20%23808080%3B%0A%7D%0A%0A%2EuiDivBUtton%0A%7B%0A%20%20%20%20cursor%3Apointer%3B%0A%7D%0A%0A%2EuiDivBUtton%3Ahover%0A%7B%0A%20%20%20%20color%3A%20%23ffffff%3B%0A%7D%0A%0A%0A%2Edialog%0A%7B%0A%20%20%20%20display%3A%20block%3B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20border%3A1px%20solid%20%23000%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Dalign%3Aleft%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20box%2Dshadow%3A4px%204px%206px%200px%20rgba%280%2C0%2C0%2C0%2E5%29%3B%0A%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20z%2Dindex%3A1000%3B%0A%20%20%20%20visibility%3A%20hidden%3B%0A%20%20%20%20opacity%3A0%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20transition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%7D%0A%0A%2EdialogHeader%0A%7B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A32px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20background%2Dcolor%3A%20%23808080%3B%0A%20%20%20%20cursor%3Amove%3B%0A%7D%0A%0A%2EdialogTitle%0A%7B%0A%20%20%20%20left%3A%2012px%3B%0A%20%20%20%20top%3A%204px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20color%3A%23000000%3B%0A%20%20%20%20font%2Dsize%3A1%2E5em%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20user%2Dselect%3A%20none%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dnone%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20none%3B%0A%7D%0A%0A%2EdialogOverlay%0A%7B%0A%20%20%20%20z%2Dindex%3A1000%3B%0A%0A%20%20%20%20visibility%3A%20hidden%3B%0A%20%20%20%20opacity%3A0%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20transition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20position%3Aabsolute%3B%0A%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C%2E4%29%3B%0A%7D%0A%0A%2EviewsIcon%2C%20%2ElikesIcon%0A%7B%0A%20%20%20%20border%3A%20none%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20display%3Ainline%2Dblock%3B%0A%20%20%20%20background%2Drepeat%3Ano%2Drepeat%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20padding%2Dright%3A%202px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20position%3Arelative%3B%0A%7D%0A%0A%2EuserPictureSmall%0A%7B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%3A%201px%20solid%20%23000000%3B%0A%20%20%20%20width%3A32px%3B%0A%20%20%20%20height%3A32px%3B%0A%7D%0A%0A%2EdialogCloseButton%0A%7B%0A%20%20%20%20right%3A8px%3B%0A%20%20%20%20top%3A%204px%3B%0A%20%20%20%20width%3A22px%3B%0A%20%20%20%20height%3A22px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20background%2Dimage%3A%20url%28%22%2Fimg%2Fclose%2Epng%22%29%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%7D%0A%0A%2EdialogCloseButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%204px%202px%20%23ffffff%2C%200px%200px%204px%202px%20%23ffffff%3B%0A%7D%0A%0A%2EdialogContentButtons%0A%7B%0A%20%20%20%20%20padding%3A0%3B%0A%20%20%20%20%20border%3A0%3B%0A%20%20%20%20%20text%2Dalign%3A%20justify%3B%0A%20%20%20%20%20left%3A%2024px%3B%0A%20%20%20%20%20bottom%3A40px%3B%0A%20%20%20%20%20position%3Aabsolute%3B%0A%7D%0A%0A%2EdialogButton%0A%7B%0A%20%20%20%20text%2Dalign%3A%20center%3B%0A%20%20%20%20vertical%2Dalign%3A%20middle%3B%0A%20%20%20%20display%3A%20inline%2Dblock%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20padding%2Dbottom%3A5px%3B%0A%20%20%20%20padding%2Dtop%3A4px%3B%0A%20%20%20%20padding%2Dleft%3A%208px%3B%0A%20%20%20%20padding%2Dright%3A%208px%3B%0A%20%20%20%20margin%2Dleft%3A4px%3B%0A%20%20%20%20margin%2Dright%3A4px%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20color%3A%23000000%3B%0A%20%20%20%20width%3A%2080px%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20%20%20%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%20%20%20%20transition%3A%20%20%20%20%20%20%20%20%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%7D%0A%0A%2EdialogButton%3Ahover%0A%7B%0A%20%20background%2Dcolor%3A%23808080%3B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0A%2EdialogCloseButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%204px%202px%20%23ffffff%2C%200px%200px%204px%202px%20%23ffffff%3B%0A%7D%0A%0A%2EdialogContent%0A%7B%0A%20%20%20%20color%3A%20inherit%3B%0A%20%20%20%20overflow%3A%20auto%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%2032px%3B%0A%20%20%20%20position%3Aabsolute%0A%7D%0A%0A%2EdialogContentBody%0A%7B%0A%20%20%20%20color%3A%20inherit%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3Aauto%3B%0A%20%20%20%20padding%2Dtop%3A24px%3B%0A%20%20%20%20padding%2Dbottom%3A24px%3B%0A%20%20%20%20padding%2Dleft%3A24px%3B%0A%20%20%20%20padding%2Dright%3A24px%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%7D%0A%0A%2EformButton%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%09color%3A%23ffffff%3B%0A%09border%3Anone%3B%0A%20%20%20%20text%2Dalign%3Acenter%3B%0A%09background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%09padding%2Dleft%3A8px%3B%0A%09padding%2Dright%3A8px%3B%0A%09padding%2Dtop%3A4px%3B%0A%09padding%2Dbottom%3A4px%3B%0A%20%20%20%20cursor%3Apointer%3B%0A%20%20%20%20min%2Dwidth%3A80px%3B%0A%7D%0A%2EformInput%20%7B%0A%20%20%20%20border%2Dradius%3A%206px%3B%0A%20%20%20%20border%3A%201px%20solid%20black%3B%0A%20%20%20%20padding%3A%204px%3B%0A%20%20%20%20border%3A%20none%3B%0A%7D%0A%2EformButton%3Ahover%20%7B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%7D%0A%2EformButton%3Adisabled%0A%7B%0A%09color%3A%23b0b0b0%3B%0A%09background%2Dcolor%3A%23808080%3B%0A%7D%0A%0A%2EformButtonSmall%0A%7B%0A%20%20%20%20color%3A%23ffffff%3B%0A%20%20%20%20border%3Anone%3B%0A%20%20%20%20text%2Dalign%3Acenter%3B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20padding%2Dleft%3A2px%3B%0A%20%20%20%20padding%2Dright%3A2px%3B%0A%20%20%20%20padding%2Dtop%3A2px%3B%0A%20%20%20%20padding%2Dbottom%3A2px%3B%0A%20%20%20%20cursor%3Apointer%3B%0A%20%20%20%20min%2Dwidth%3A40px%3B%0A%7D%0A%0A%2EformButtonSmall%3Ahover%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%7D%0A%0A%2EformButtonSmall%3Adisabled%0A%7B%0A%20%20%20%20color%3A%23b0b0b0%3B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%7D%0A%0A%2EformButtonSmall%2Edisabled2%2C%0A%2EformButton%2Edisabled2%20%7B%20color%3A%23b0b0b0%3B%20background%2Dcolor%3A%23808080%3B%20pointer%2Devents%3A%20none%3B%20%7D%0A%0A%2EinputForm%0A%7B%0A%20%20%20%20padding%2Dleft%3A2%25%3B%0A%20%20%20%20padding%2Dright%3A2%25%3B%0A%20%20%20%20resize%3A%20none%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20background%2Dcolor%3A%23e0e0e0%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20border%3A%201px%20solid%20%23808080%3B%0A%20%20%20%20color%3Ainherit%3B%0A%7D%0A%0A%2EinputForm%3Afocus%0A%7B%0A%20%20%20%20border%3A%201px%20solid%20%23AFCDD8%3B%0A%20%20%20%20background%2Dcolor%3A%20%23EBF2F4%3B%0A%7D%0A%0A%2EtransparentPannel%0A%7B%0A%20%20%20%20background%2Dcolor%3Argba%2864%2C64%2C64%2C0%2E1%29%3B%0A%20%20%20%20padding%3A16px%3B%0A%7D%0A%0A%2Ecomment%2C%20%2EcommentSelf%2C%20%2EcommentNew%0A%7B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20margin%2Dleft%3A%200px%3B%0A%20%20%20%20margin%2Dright%3A%200px%3B%0A%20%20%20%20margin%2Dtop%3A%200px%3B%0A%20%20%20%20margin%2Dbottom%3A%206px%3B%0A%0A%20%20%20%20padding%3A%2014px%3B%0A%20%20%20%20display%3A%20grid%3B%0A%20%20%20%20grid%2Dtemplate%2Dcolumns%3A%2032px%20auto%208px%3B%0A%20%20%20%20grid%2Dtemplate%2Drows%3A%201fr%3B%0A%20%20%20%20grid%2Dgap%3A8px%3B%0A%7D%0A%0A%2Ecomment%3Anth%2Dchild%28even%29%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%2864%2C64%2C64%2C0%2E1%29%3B%0A%7D%0A%0A%2Ecomment%3Anth%2Dchild%28odd%29%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%28128%2C128%2C128%2C0%2E1%29%3B%0A%7D%0A%0A%2EcommentSelf%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%28240%2C160%2C64%2C0%2E1%29%3B%0A%7D%0A%0A%2EcommentNew%0A%7B%0A%20%20%20%20padding%2Dright%3A%200px%3B%0A%20%20%20%20grid%2Dtemplate%2Dcolumns%3A%2040px%20auto%3B%0A%7D%0A%0A%2EcommentContent%0A%7B%0A%20%20%20%20vertical%2Dalign%3A%20top%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20word%2Dbreak%3A%20break%2Dall%3B%0A%20%20%20%20word%2Dbreak%3A%20break%2Dword%3B%0A%20%20%20%20white%2Dspace%3A%20pre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dmoz%2Dpre%2Dwrap%3B%0A%7D%0A%0A%0A%2F%2A%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%20media%20resolutions%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%20%2A%2F%0A%0A%40media%20screen%20and%20%28max%2Dwidth%3A799px%29%0A%7B%0A%20%20%20%20div%23header%20%7Bflex%2Ddirection%3Acolumn%3B%20%7D%0A%20%20%20%20%23headerBlock1%20%7B%20width%3A100%25%3B%20%7D%0A%20%20%20%20%23headerBlock2%20%7B%20width%3A100%25%3B%20justify%2Dcontent%3A%20space%2Daround%3B%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A200px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A200px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A130px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A10px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A800px%29%20and%20%28max%2Dwidth%3A1279px%29%0A%7B%0A%20%20%20%20body%20%7B%20font%2Dsize%3A%209px%3B%20%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20250px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A250px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A130px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A11px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1280px%29%20and%20%28max%2Dwidth%3A1439px%29%0A%7B%0A%20%20%20%20body%20%7B%20font%2Dsize%3A%2010px%3B%20%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A28px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A180px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A12px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1440px%29%20and%20%28max%2Dwidth%3A1919px%29%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A28px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A180px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A12px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1920px%29%20and%20%28max%2Dwidth%3A2559px%29%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A32px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A220px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A16px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A2560px%29%20%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A32px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A220px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A16px%3B%20%7D%0A%7D%0Abody%0A%7B%0A%20%20%20%20background%2Dimage%3A%20url%28%22%2Fimg%2Fthemes%2Fclassic%2Fbackground%2Ejpg%22%29%3B%0A%7D%0A%3C%2Fstyle%3E%0A%0A%3Cstyle%3E%0Abody%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23000000%3B%0A%20%20%20%20color%3A%20%23c0c0c0%3B%0A%20%20%20%20font%2Dsize%3A12px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ATahoma%2CArial%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%20%20%20%20overflow%3Ahidden%3B%0A%20%20%20%20position%3Aabsolute%3B%0A%20%20%20%20user%2Dselect%3A%20none%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dnone%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20none%3B%0A%7D%0A%0Adiv%23player%0A%7B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%7D%0A%0Adiv%23playerInteraction%0A%7B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%7D%0A%0A%2EplayerCanvas%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%7D%0A%0Adiv%23noWebGL%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20border%2Dradius%3A%204px%204px%200px%200px%3B%0A%20%20%20%20background%2Dcolor%3A%23000000%3B%0A%20%20%20%20visibility%3A%20hidden%3B%0A%7D%0A%0Aimg%23noWebGL%5FShaderImage%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20border%2Dradius%3A%204px%204px%200px%200px%3B%0A%7D%0A%0Aspan%23noWebGL%5FText%0A%7B%0A%20%20%20%20left%3A8px%3B%0A%20%20%20%20font%2Dsize%3A%201%2E5em%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20color%3A%23ff0000%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Adiv%23playerBar%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20bottom%3A%200px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%2030px%3B%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C0%2E8%29%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%0A%20%20%20%20transition%3A%20bottom%201s%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20bottom%201s%3B%20%2F%2A%20Safari%20%2A%2F%0A%7D%0A%0Adiv%23playerBar%2EisVisible%0A%7B%0A%20%20%20%20bottom%3A0px%3B%0A%7D%0A%0Adiv%23playerBar%2EisNotVisible%0A%7B%0A%20%20%20%20bottom%3A%2D31px%3B%0A%7D%0A%0A%2EmyFull%0A%7B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0A%2EplayerCanvas%5Ffull%2Dscreen%2C%0A%2EplayerCanvas%3Afull%2Dscreen%2C%0A%2EplayerCanvas%3Afullscreen%2C%0A%2EplayerCanvas%3A%2Dwebkit%2Dfull%2Dscreen%2C%0A%2EplayerCanvas%3A%2Dmoz%2Dfull%2Dscreen%0A%7B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0A%0Adiv%23shaderInfo%0A%7B%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C0%2E8%29%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%2030px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%0A%20%20%20%20transition%3A%20top%201s%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20top%201s%3B%20%2F%2A%20Safari%20%2A%2F%0A%7D%0A%0Adiv%23shaderInfo%2EisVisible%0A%7B%0A%20%20%20%20top%3A0px%3B%0A%7D%0Adiv%23shaderInfo%2EisNotVisible%0A%7B%0A%20%20%20%20top%3A%2D31px%3B%0A%7D%0A%0Aa%2EshaderTitle%0A%7B%0A%20%20%20%20font%2Dsize%3A18px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20color%3A%20%23c0c0c0%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20margin%2Dleft%3A6px%3B%0A%20%20%20%20margin%2Dright%3A6px%3B%0A%7D%0A%0Aa%2EshaderTitle%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0A%0Adiv%23shaderStats%0A%7B%0A%20%20%20%20top%3A%208px%3B%0A%20%20%20%20right%3A%204px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%2Dleft%3A0%3B%0A%20%20%20%20padding%2Dright%3A0%3B%0A%20%20%20%20margin%2Dleft%3A0%3B%0A%20%20%20%20margin%2Dright%3A0%3B%0A%7D%0A%0Adiv%23shaderLike%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%20150px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Aa%2EshadertoyLink%0A%7B%0A%20%20%20%20color%3A%23c0c0c0%3B%0A%20%20%20%20font%2Dsize%3A16px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dweight%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ALobster%2CTahoma%2CArial%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20top%3A%205px%3B%0A%20%20%20%20right%3A%206px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%2Dleft%3A0%3B%0A%20%20%20%20padding%2Dright%3A0%3B%0A%20%20%20%20margin%2Dleft%3A0%3B%0A%20%20%20%20margin%2Dright%3A0%3B%0A%20%20%20%20text%2Ddecoration%3Anone%3B%0A%0A%20%20%20%20user%2Dselect%3A%20text%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dtext%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20text%3B%0A%7D%0Aa%2EshadertoyLink%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%3C%2Fstyle%3E%0A%0A%20%20%20%20%3Cscript%3Evar%20gShaderID%3D%22wcSXzD%22%3Bvar%20gInvisIfFail%3Dnull%3Bvar%20gTime%3D%2210%22%3Bvar%20gShowGui%3Dtrue%3Bvar%20gPaused%3Dtrue%3Bvar%20gMuted%3Dfalse%3B%3C%2Fscript%3E%0A%0A%20%20%20%20%3Cscript%20src%3D%22%2Flib%2FpiLibs%2Ejs%3Fv%3D86%22%3E%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%20src%3D%22%2Fjs%2Feffect%2Ejs%3Fv%3D86%22%3E%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%0A%0Aconst%20kMaxCompileTime%20%3D%2010%2E0%3B%0A%0Afunction%20iReportCrash%28shaderID%29%0A%7B%0A%20%20%20%20let%20req%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20req%2Eonload%20%3D%20function%20%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20let%20jsn%20%3D%20req%2Eresponse%3B%0A%20%20%20%20%20%20%20%20if%20%28jsn%20%3D%3D%3D%20null%29%20return%3B%0A%20%20%20%20%20%20%20%20if%20%28jsn%2Eresult%20%3D%3D%3D%200%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20yep%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%3B%0A%20%20%20%20req%2Eopen%28%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%29%3B%0A%20%20%20%20req%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20req%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20req%2Esend%28%20%22s%3D%22%20%2B%20shaderID%20%2B%20%22%26r%3D2%22%20%29%3B%0A%7D%0A%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%3B%0A%0Aclass%20SoundCloud%20%0A%7B%0A%20%20%20%20resolve%28url%2C%20callback%2C%20errcallback%29%20%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20url2%20%3D%20%22surl%3D%22%20%2B%20url%3B%0A%20%20%20%20%20%20%20%20var%20mHttpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eopen%28%20%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%20%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eonload%20%3D%20function%28%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20jsn%20%3D%20mHttpReq%2Eresponse%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20jsn%3D%3D%3Dnull%20%29%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20jsn%2Eresult%21%3D%3D0%20%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20callback%28JSON%2Eparse%28jsn%2Esoundcloud%29%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eonerror%20%3D%20function%28%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Esend%28%20url2%20%29%3B%0A%20%20%20%20%7D%0A%7D%0A%0Aconst%20SC%20%3D%20new%20SoundCloud%28%29%3B%0A%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%0A%0Avar%20gShaderToy%20%3D%20null%3B%0A%0Afunction%20ShaderToy%28%20parentElement%20%29%0A%7B%0A%20%20%20%20if%28%20parentElement%3D%3D%3Dnull%20%29%20return%3B%0A%0A%20%20%20%20this%2EmAudioContext%20%3D%20null%3B%0A%20%20%20%20this%2EmCreated%20%3D%20false%3B%0A%20%20%20%20this%2EmHttpReq%20%3D%20null%3B%0A%20%20%20%20this%2EmEffect%20%3D%20null%3B%0A%20%20%20%20this%2EmTo%20%3D%20null%3B%0A%20%20%20%20this%2EmTOffset%20%3D%20gTime%20%2A%201000%3B%0A%20%20%20%20this%2EmCanvas%20%3D%20null%3B%0A%20%20%20%20this%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20null%3B%0A%20%20%20%20this%2EmIsPaused%20%3D%20gPaused%3B%0A%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20this%2EmInfo%20%3D%20null%3B%0A%20%20%20%20this%2EmCode%20%3D%20null%3B%0A%0A%20%20%20%20this%2EmCanvas%20%3D%20document%2EgetElementById%28%22demogl%22%29%3B%0A%20%20%20%20this%2EmCanvas%2EtabIndex%20%3D%20%220%22%3B%0A%0A%20%20%20%20var%20ww%20%3D%20parentElement%2EoffsetWidth%3B%0A%20%20%20%20var%20hh%20%3D%20parentElement%2EoffsetHeight%3B%0A%0A%20%20%20%20var%20me%20%3D%20this%3B%0A%20%20%20%20this%2EmCanvas%2Ewidth%20%20%3D%20ww%3B%0A%20%20%20%20this%2EmCanvas%2Eheight%20%3D%20hh%3B%0A%0A%20%20%20%20this%2EmHttpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20this%2EmTo%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20this%2EmTf%20%3D%20this%2EmTOffset%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20this%2EmTo%3B%0A%20%20%20%20this%2EmMouseIsDown%20%3D%20false%3B%0A%20%20%20%20this%2EmMouseOriX%20%3D%200%3B%0A%20%20%20%20this%2EmMouseOriY%20%3D%200%3B%0A%20%20%20%20this%2EmMousePosX%20%3D%200%3B%0A%20%20%20%20this%2EmMousePosY%20%3D%200%3B%0A%0A%0A%20%20%20%20%2F%2F%20%2D%2D%2D%20audio%20context%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0A%20%20%20%20this%2EmAudioContext%20%3D%20piCreateAudioContext%28%29%3B%0A%0A%20%20%20%20if%28%20this%2EmAudioContext%3D%3Dnull%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%2F%2Falert%28%20%22no%20audio%21%22%20%29%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eonmousedown%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20pos%20%3D%20piGetCoords%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriX%20%3D%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%28ev%2EpageX%20%2D%20pos%2EmX%29%2Ame%2EmCanvas%2Ewidth%2Fme%2EmCanvas%2EoffsetWidth%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriY%20%3D%20me%2EmCanvas%2Eheight%20%2D%20%28ev%2EpageY%20%2D%20pos%2EmY%29%2Ame%2EmCanvas%2Eheight%2Fme%2EmCanvas%2EoffsetHeight%3B%0A%20%20%20%20%20%20%20%20me%2EmMousePosX%20%3D%20me%2EmMouseOriX%3B%0A%20%20%20%20%20%20%20%20me%2EmMousePosY%20%3D%20me%2EmMouseOriY%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseIsDown%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonmousemove%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmMouseIsDown%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20pos%20%3D%20piGetCoords%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmMousePosX%20%3D%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%28ev%2EpageX%20%2D%20pos%2EmX%29%2Ame%2EmCanvas%2Ewidth%2Fme%2EmCanvas%2EoffsetWidth%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmMousePosY%20%3D%20me%2EmCanvas%2Eheight%20%2D%20%28ev%2EpageY%20%2D%20pos%2EmY%29%2Ame%2EmCanvas%2Eheight%2Fme%2EmCanvas%2EoffsetHeight%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonmouseup%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmMouseIsDown%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriX%20%3D%20%2DMath%2Eabs%28%20me%2EmMouseOriX%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriY%20%3D%20%2DMath%2Eabs%28%20me%2EmMouseOriY%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eonkeydown%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmEffect%2ESetKeyDown%28%200%2C%20ev%2EkeyCode%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonkeyup%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmEffect%2ESetKeyUp%28%200%2C%20ev%2EkeyCode%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20document%2EgetElementById%28%22myResetButton%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EresetTime%28%29%3B%0A%20%20%20%20%7D%0A%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EpauseTime%28%29%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eondblclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20piIsFullScreen%28%29%3D%3Dfalse%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20piRequestFullScreen%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20piExitFullScreen%28%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%0A%20%20%20%20document%2EgetElementById%28%22myFullScreen%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20piRequestFullScreen%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%7D%0A%0A%20%20%20%20var%20resizeCB%20%3D%20function%20%28xres%2C%20yres%29%20%7B%20me%2EmForceFrame%20%3D%20true%3B%20%7D%3B%0A%20%20%20%20var%20crashCB%20%3D%20function%20%28%29%20%7B%20%2F%2AiReportCrash%28gShaderID%29%3B%2A%2F%20%7D%3B%0A%20%20%20%20this%2EmEffect%20%3D%20new%20Effect%28null%2C%20this%2EmAudioContext%2C%20this%2EmCanvas%2C%20this%2ERefreshTexturThumbail%2C%20this%2C%20gMuted%2C%20false%2C%20resizeCB%2C%20crashCB%20%29%3B%0A%20%20%20%20this%2EmCreated%20%3D%20true%3B%0A%0A%7D%0A%0AShaderToy%2Eprototype%2EstartRendering%20%3D%20function%28%29%0A%7B%0A%20%20%20%20var%20me%20%3D%20this%3B%0A%0A%20%20%20%20function%20renderLoop2%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20requestAnimFrame%28%20renderLoop2%20%29%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%26%26%20%21me%2EmForceFrame%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmEffect%2EUpdateInputs%28%200%2C%20false%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20return%3B%0A%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20me%2EmForceFrame%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20var%20time%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20%20%20%20%20var%20ltime%20%3D%20me%2EmTOffset%20%2B%20time%20%2D%20me%2EmTo%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20ltime%20%3D%20me%2EmTf%3B%20else%20me%2EmTf%20%3D%20ltime%3B%0A%0A%20%20%20%20%20%20%20%20var%20dtime%20%3D%201000%2E0%20%2F%2060%2E0%3B%0A%0A%20%20%20%20%20%20%20%20me%2EmEffect%2EPaint%28ltime%2F1000%2E0%2C%20dtime%2F1000%2E0%2C%2060%2C%20me%2EmMouseOriX%2C%20me%2EmMouseOriY%2C%20me%2EmMousePosX%2C%20me%2EmMousePosY%2C%20me%2EmIsPaused%20%29%3B%0A%0A%20%20%20%20%20%20%20%20me%2EmFpsFrame%2B%2B%3B%0A%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myTime%22%29%2EtextContent%20%3D%20%28ltime%2F1000%2E0%29%2EtoFixed%282%29%3B%0A%20%20%20%20%20%20%20%20if%28%20%28time%2Dme%2EmFpsTo%29%3E1000%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20ffps%20%3D%201000%2E0%20%2A%20me%2EmFpsFrame%20%2F%20%28time%2Dme%2EmFpsTo%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myFramerate%22%29%2EtextContent%20%3D%20ffps%2EtoFixed%281%29%20%2B%20%22%20fps%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmFpsTo%20%3D%20time%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%0A%20%20%20%20renderLoop2%28%29%3B%0A%7D%0A%0A%2F%2F%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0AShaderToy%2Eprototype%2EStop%20%3D%20function%28%29%0A%7B%0A%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Estyle%2Ebackground%3D%22url%28%27%2Fimg%2FplayEmbed%2Epng%27%29%22%3B%0A%20%20%20%20this%2EmIsPaused%20%3D%20true%3B%0A%20%20%20%20this%2EmEffect%2EStopOutputs%28%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EpauseTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20var%20time%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20if%28%20%21this%2EmIsPaused%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20this%2EStop%28%29%3B%0A%20%20%20%20%20%7D%0A%20%20%20%20else%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Estyle%2Ebackground%3D%22url%28%27%2Fimg%2FpauseEmbed%2Epng%27%29%22%3B%0A%20%20%20%20%20%20%20%20this%2EmTOffset%20%3D%20this%2EmTf%3B%0A%20%20%20%20%20%20%20%20this%2EmTo%20%3D%20time%3B%0A%20%20%20%20%20%20%20%20this%2EmIsPaused%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20this%2EmEffect%2EResumeOutputs%28%29%3B%0A%20%20%20%20%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%7D%0A%7D%0A%0AShaderToy%2Eprototype%2EresetTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20this%2EmTOffset%20%3D%200%3B%0A%20%20%20%20this%2EmTo%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20this%2EmTf%20%3D%200%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20this%2EmTo%3B%0A%20%20%20%20this%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20this%2EmEffect%2EResetTime%28%29%3B%0A%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%7D%0A%0A%0AShaderToy%2Eprototype%2EPauseInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EPauseInput%28%200%2C%20id%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EMuteInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EMuteInput%28%200%2C%20id%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ERewindInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ERewindInput%28%200%2C%20id%20%29%3B%0A%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%7D%0A%0AShaderToy%2Eprototype%2ESetTexture%20%3D%20function%28%20slot%2C%20url%20%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ENewTexture%28%200%2C%20slot%2C%20url%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ERefreshTexturThumbail%20%3D%20function%28%20myself%2C%20slot%2C%20img%2C%20forceFrame%2C%20gui%2C%20guiID%2C%20time%20%29%0A%7B%0A%20%20myself%2EmForceFrame%20%3D%20forceFrame%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EGetTotalCompilationTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EGetTotalCompilationTime%28%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ELoad%20%3D%20function%28%20jsn%20%29%0A%7B%0A%20%20%20%20try%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20res%20%3D%20this%2EmEffect%2ELoad%28%20jsn%2C%20false%20%29%3B%0A%20%20%20%20%20%20%20%20this%2EmCode%20%3D%20res%2EmShader%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20res%2EmFailed%3D%3D%3Dfalse%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2Fthis%2EresetTime%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20this%2EmInfo%20%3D%20jsn%2Einfo%3B%0A%0A%20%20%20%20%20%20%20%20return%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20mFailed%3A%20false%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mDate%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Edate%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mViewed%20%20%20%20%20%20%3A%20jsn%2Einfo%2Eviewed%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mName%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Ename%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mUserName%20%20%20%20%3A%20jsn%2Einfo%2Eusername%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mDescription%20%3A%20jsn%2Einfo%2Edescription%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mLikes%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Elikes%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mPublished%20%20%20%3A%20jsn%2Einfo%2Epublished%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mHasLiked%20%20%20%20%3A%20jsn%2Einfo%2Ehasliked%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mTags%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Etags%20%7D%3B%0A%0A%20%20%20%20%7D%0A%20%20%20%20catch%28%20e%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20return%20%7B%20mFailed%3Atrue%20%7D%3B%0A%20%20%20%20%7D%0A%7D%0A%0AShaderToy%2Eprototype%2ECompile%20%3D%20function%20%28onResolve%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ECompile%28true%2C%20onResolve%29%3B%0A%7D%0A%0Afunction%20iCompileAndStart%28%20viewerParent%2C%20jsnShader%20%29%0A%7B%0A%20%20%20%20gShaderToy%20%3D%20new%20ShaderToy%28%20viewerParent%2C%20null%20%29%3B%0A%20%20%20%20if%28%20%21gShaderToy%2EmCreated%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20gInvisIfFail%21%3D%3Dnull%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20var%20div%20%3D%20document%2EcreateElement%28%22img%22%29%3B%0A%20%20%20%20%20%20%20%20%20%20div%2Esrc%20%3D%20gInvisIfFail%3B%0A%20%20%20%20%20%20%20%20%20%20var%20root%20%3D%20document%2EgetElementsByTagName%28%20%22body%22%20%29%5B0%5D%3B%0A%20%20%20%20%20%20%20%20%20%20root%2EreplaceChild%28%20div%2C%20viewerParent%20%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20return%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20var%20gRes%20%3D%20gShaderToy%2ELoad%28jsnShader%5B0%5D%29%0A%20%20%20%20if%20%28gRes%2EmFailed%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20gShaderToy%2EpauseTime%28%29%3B%0A%20%20%20%20%20%20%20%20gShaderToy%2EresetTime%28%29%3B%0A%20%20%20%20%7D%0A%20%20%20%20else%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20let%20st%20%3D%20document%2EgetElementById%28%22shaderTitle%22%29%3B%0A%20%20%20%20%20%20%20%20let%20str%20%3D%20%22%3Ca%20class%3D%5C%22shaderTitle%5C%22%20target%3D%5C%22%5Fblank%5C%22%20href%3D%5C%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%2Fview%2F%22%20%2B%20gShaderID%20%2B%20%22%5C%22%3E%22%20%2B%20htmlEntities%28gRes%2EmName%29%20%2B%20%22%3C%2Fa%3E%22%3B%0A%20%20%20%20%20%20%20%20str%20%2B%3D%20%22%3Cspan%3Eby%20%22%20%2B%20htmlEntities%28gRes%2EmUserName%29%20%2B%20%22%20in%20%22%20%2B%20piGetTime%28gRes%2EmDate%29%20%2B%20%22%3C%2Fspan%3E%22%3B%0A%20%20%20%20%20%20%20%20st%2EinnerHTML%20%3D%20str%3B%0A%0A%20%20%20%20%20%20%20%20let%20shaderStats%20%3D%20document%2EgetElementById%28%22shaderStats%22%29%3B%0A%20%20%20%20%20%20%20%20shaderStats%2EinnerHTML%20%3D%20%22%3Cimg%20src%3D%27%2Fimg%2FviewsEmbed%2Epng%27%20class%3D%27viewsIcon%27%3E%3C%2Fimg%3E%3Cspan%3E%22%20%2B%20gRes%2EmViewed%20%2B%20%22%3C%2Fspan%3E%20%20%20%20%26nbsp%3B%26nbsp%3B%20%20%3Cimg%20src%3D%27%2Fimg%2FlikesEmbed%2Epng%27%20class%3D%27likesIcon%27%3E%3C%2Fimg%3E%3Cspan%3E%22%20%2B%20gRes%2EmLikes%20%2B%20%22%3C%2Fspan%3E%22%3B%0A%0A%0A%20%20%20%20%20%20%20%20gShaderToy%2ECompile%28%20function%20%28worked%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28%21worked%29%20return%3B%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2A%0A%20%20%20%20%20%20%20%20%20%20%20%20let%20compilationTime%20%3D%20gShaderToy%2EGetTotalCompilationTime%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28compilationTime%20%3E%20kMaxCompileTime%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20iReportCrash%28gShaderID%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2A%2F%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28gShaderToy%2EmIsPaused%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20gShaderToy%2EStop%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20gShaderToy%2EstartRendering%28%29%3B%0A%20%20%20%20%20%20%20%20%7D%29%3B%0A%20%20%20%20%7D%0A%0A%7D%0A%0Afunction%20watchInit%28%29%0A%7B%0A%20%20%20%20%20%20%2F%2F%2D%2D%20shadertoy%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%20%20%20%20var%20viewerParent%20%3D%20document%2EgetElementById%28%22player%22%29%3B%0A%0A%20%20%20%20if%28%20gShowGui%3D%3D%3Dfalse%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20viewerParent%2EaddEventListener%28%20%22mouseover%22%2C%20function%28e%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isVisible%27%3B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isVisible%27%3B%0A%20%20%20%20%7D%2C%20true%20%29%3B%0A%0A%20%20%20%20viewerParent%2EaddEventListener%28%20%22mouseout%22%2C%20function%28e%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20var%20tt%20%3D%20e%2ErelatedTarget%20%7C%7C%20e%2EtoElement%3B%0A%0A%20%20%20%20%20%20%2F%2Fconsole%2Elog%28%20%22OUT%20%20%20t%3A%20%22%20%2B%20e%2Etarget%2Eid%20%2B%20%22%20%20%20%20ct%3A%20%22%20%2B%20e%2EcurrentTarget%2Eid%20%2B%20%22%20%20%20%20this%3A%20%22%20%2B%20this%2Eid%20%2B%20%22%20%20%20%20target%3A%20%22%20%2B%20%28%28tt%3D%3Dnull%29%3F%22none%22%3Att%2Eid%29%20%29%3B%0A%20%20%20%20%20%20if%28%20tt%21%3D%3Dnull%20%29%20return%3B%0A%0A%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%7D%2C%20true%20%29%3B%0A%0A%20%20%20%20document%2Ebody%2EaddEventListener%28%20%22keydown%22%2C%20function%28e%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20var%20ele%20%3D%20piGetSourceElement%28e%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20if%28%20e%2EkeyCode%3D%3D%3D8%20%26%26%20ele%3D%3D%3Ddocument%2Ebody%20%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20e%2EpreventDefault%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%20%29%3B%0A%0A%0A%20%20%20%20%2F%2F%2D%2D%20get%20info%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0A%20%20%20%20var%20httpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20httpReq%2Eopen%28%20%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%20%29%3B%0A%20%20%20%20httpReq%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20httpReq%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20var%20str%20%3D%20%22%7B%20%5C%22shaders%5C%22%20%3A%20%5B%5C%22%22%20%2B%20gShaderID%20%2B%20%22%5C%22%5D%20%7D%22%3B%0A%20%20%20%20str%20%3D%20%22s%3D%22%20%2B%20encodeURIComponent%28str%29%20%2B%20%22%26nt%3D0%26nl%3D0%26np%3D0%22%3B%3B%0A%20%20%20%20httpReq%2Eonload%20%3D%20function%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20jsnShader%20%3D%20httpReq%2Eresponse%3B%0A%0A%20%20%20%20%20%20%20%20if%20%28jsnShader%5B0%5D%2Einfo%2EusePreview%20%3D%3D%3D%201%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20let%20url%20%3D%20%22%2Fmedia%2Fshaders%2F%22%20%2B%20gShaderID%20%2B%20%22%2Ejpg%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20img%20%3D%20new%20Image%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Estyle%20%3D%20%22width%3A100%25%3B%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Eonload%20%3D%20function%20%28%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20viewerParent%2EappendChild%28img%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Eonerror%20%3D%20function%20%28ev%29%20%7B%20iCompileAndStart%28viewerParent%2CjsnShader%29%3B%20%7D%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Esrc%20%3D%20url%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20iCompileAndStart%28viewerParent%2CjsnShader%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20httpReq%2Esend%28%20str%20%20%29%3B%0A%7D%0A%3C%2Fscript%3E%0A%3C%2Fhead%3E%0A%0A%3Cbody%20onload%3D%22watchInit%28%29%22%3E%0A%0A%3C%21%2D%2D%20content%20%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%2D%2D%3E%0A%0A%3Cdiv%20id%3D%22player%22%3E%0A%20%20%20%20%3Ccanvas%20id%3D%22demogl%22%20class%3D%22playerCanvas%22%3E%3C%2Fcanvas%3E%0A%20%20%20%20%3Cdiv%20id%3D%22noWebGL%22%3E%3Cimg%20id%3D%22noWebGL%5FShaderImage%22%3E%3C%2Fimg%3E%3Cspan%20id%3D%22noWebGL%5FText%22%3ENo%20WebGL%20available%20%3A%28%3C%2Fspan%3E%3C%2Fdiv%3E%0A%0A%0A%20%20%20%20%3Cdiv%20id%3D%22shaderInfo%22%3E%0A%20%20%20%20%20%20%20%20%3Cdiv%20%20%20id%3D%22shaderTitle%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%3Cdiv%20%20%20id%3D%22shaderStats%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fdiv%3E%0A%0A%20%20%20%20%3Cdiv%20id%3D%22playerBar%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myResetButton%22%20class%3D%22uiButton%22%20title%3D%22reset%20time%22%20%20%20%20%20%20style%3D%22left%3A%2016px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FrewindEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myPauseButton%22%20class%3D%22uiButton%22%20title%3D%22pause%2Fresume%22%20%20%20%20style%3D%22left%3A%2044px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FplayEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cspan%20id%3D%22myTime%22%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20style%3D%22left%3A%2088px%3Btop%3A6px%3Bposition%3Aabsolute%3Bmargin%3A0px%3Bpadding%3A0px%3Bfont%3Aitalic%20normal%2014px%20arial%2Cserif%22%3E0%3C%2Fspan%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cspan%20id%3D%22myFramerate%22%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20style%3D%22left%3A164px%3Btop%3A6px%3Bposition%3Aabsolute%3Bmargin%3A0px%3Bpadding%3A0px%3Bfont%3Aitalic%20normal%2014px%20arial%2Cserif%22%3E0%20fps%3C%2Fspan%3E%0A%20%20%20%20%20%20%20%20%20%20%3Ca%20class%3D%22shadertoyLink%22%20href%3D%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%22%20target%3D%22%5Fblank%22%3EShadertoy%3C%2Fa%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myFullScreen%22%20%20class%3D%22uiButton%22%20title%3D%22go%20full%20screen%21%22%20style%3D%22right%3A80px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FfullscreenEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%0A%3Cscript%3E%0A%20%20%20%20%28function%28i%2Cs%2Co%2Cg%2Cr%2Ca%2Cm%29%7Bi%5B%27GoogleAnalyticsObject%27%5D%3Dr%3Bi%5Br%5D%3Di%5Br%5D%7C%7Cfunction%28%29%7B%0A%20%20%20%20%28i%5Br%5D%2Eq%3Di%5Br%5D%2Eq%7C%7C%5B%5D%29%2Epush%28arguments%29%7D%2Ci%5Br%5D%2El%3D1%2Anew%20Date%28%29%3Ba%3Ds%2EcreateElement%28o%29%2C%0A%20%20%20%20m%3Ds%2EgetElementsByTagName%28o%29%5B0%5D%3Ba%2Easync%3D1%3Ba%2Esrc%3Dg%3Bm%2EparentNode%2EinsertBefore%28a%2Cm%29%0A%20%20%20%20%7D%29%28window%2Cdocument%2C%27script%27%2C%27%2F%2Fwww%2Egoogle%2Danalytics%2Ecom%2Fanalytics%2Ejs%27%2C%27ga%27%29%3B%0A%0A%20%20%20%20ga%28%27create%27%2C%20%27UA%2D44068895%2D1%27%2C%20%27shadertoy%2Ecom%27%29%3B%0A%20%20%20%20ga%28%27send%27%2C%20%27pageview%27%29%3B%0A%3C%2Fscript%3E%0A%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A" allowfullscreen>
+</iframe>
+<hr />
+<iframe width="640" height="360" frameborder="0" src="data:text/html; charset=UTF-8;charset=utf-8,%0A%3C%21DOCTYPE%20HTML%3E%0A%3Chtml%20lang%3D%22en%22%3E%0A%3Chead%3E%0A%20%20%20%20%0A%3Cscript%20async%20src%3D%22https%3A%2F%2Fwww%2Egoogletagmanager%2Ecom%2Fgtag%2Fjs%3Fid%3DG%2D7SYLWGZYJ2%22%3E%3C%2Fscript%3E%0A%3Cscript%3E%0A%20%20window%2EdataLayer%20%3D%20window%2EdataLayer%20%7C%7C%20%5B%5D%3B%0A%20%20function%20gtag%28%29%7BdataLayer%2Epush%28arguments%29%3B%7D%0A%20%20gtag%28%27js%27%2C%20new%20Date%28%29%29%3B%0A%0A%20%20gtag%28%27config%27%2C%20%27G%2D7SYLWGZYJ2%27%29%3B%0A%3C%2Fscript%3E%0A%0A%3Ctitle%3EEmbed%20%2D%20Shadertoy%20BETA%3C%2Ftitle%3E%0A%3Cmeta%20charset%3D%22utf%2D8%22%20%2F%3E%0A%3Cmeta%20name%3D%22Keywords%22%20content%3D%22shadertoy%2C%20shader%20toy%2C%20quilez%2C%20inigo%2C%20jeremias%2C%20pol%2C%20fractals%2C%20demoscene%2C%20computer%20graphics%2C%20mathematics%2C%20rendering%2C%20demo%2C%203D%2C%20realtime%2C%20shader%2C%20raytracing%2C%20raymarching%2C%20webgl%2C%20glsl%22%20%2F%3E%0A%3Cmeta%20name%3D%22Description%22%20content%3D%22Build%20shaders%2C%20share%20them%2C%20and%20learn%20from%20the%20best%20community%2E%22%20%2F%3E%0A%3Cmeta%20name%3D%22Author%22%20content%3D%22Beautypi%22%20%2F%3E%0A%3Cmeta%20name%3D%22apple%2Dmobile%2Dweb%2Dapp%2Dcapable%22%20content%3D%22yes%22%20%2F%3E%0A%3Cmeta%20name%3D%22viewport%22%20content%3D%22width%3Ddevice%2Dwidth%2C%20initial%2Dscale%3D1%2E0%22%20%2F%3E%0A%0A%3Clink%20rel%3D%22image%5Fsrc%22%20href%3D%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%2Fimg%2Flogo%2Epng%22%20%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F57%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20sizes%3D%2272x72%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F72%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22apple%2Dtouch%2Dicon%22%20sizes%3D%22114x114%22%20href%3D%22%2Fimg%2Flaunch%5Ficon%5F114%2Epng%22%2F%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20href%3D%22%2Fimg%2Ffavicon%2Eico%22%2F%3E%0A%0A%3Cstyle%3E%2A%0A%7B%0A%20%20%20%20box%2Dsizing%3A%20border%2Dbox%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%20%7B%0A%20%20%20%20height%3A%208px%3B%0A%20%20%20%20width%3A%208px%3B%0A%20%20%20%20background%3A%20%23404040%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%2Dthumb%0A%7B%0A%20%20%20%20background%3A%20%23909090%3B%0A%20%20%20%20border%2Dradius%3A%200ex%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dscrollbar%2Dcorner%0A%7B%0A%20%20%20%20background%3A%20%23000%3B%0A%7D%0A%0A%3A%3A%2Dwebkit%2Dinput%2Dplaceholder%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0Ainput%3A%2Dmoz%2Dplaceholder%2C%20textarea%3A%2Dmoz%2Dplaceholder%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0Ainput%2Eplaceholder%2Dtext%2C%20textarea%2Eplaceholder%2Dtext%0A%7B%0A%09font%2Dstyle%3Aitalic%3B%0A%7D%0A%0Apre%20%0A%7B%0A%20%20%20%20white%2Dspace%3A%20pre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dmoz%2Dpre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dpre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Do%2Dpre%2Dwrap%3B%0A%20%20%20%20word%2Dwrap%3A%20break%2Dword%3B%0A%7D%0A%0A%40font%2Dface%0A%7B%0A%20%20%20%20font%2Dfamily%3A%20Lobster%3B%0A%20%20%20%20src%3A%20url%28%22%2Fimg%2Flobster%2Eotf%22%29%20format%28%22opentype%22%29%3B%0A%7D%0A%0Adiv%23centerScreen%0A%7B%0A%20%20%20%20left%3A%2050%25%3B%0A%20%20%20%20top%3A%2050%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Aa%2EheaderLinks%3Ahover%0A%7B%0A%20%20%20%20background%2Dcolor%3A%23505050%3B%0A%20%20%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Abody%0A%7B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20font%2Dsize%3A12px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ATahoma%2CArial%3B%0A%20%20%20%20background%2Drepeat%3A%20no%2Drepeat%3B%0A%20%20%20%20%2F%2Fbackground%2Dattachment%3A%20fixed%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20background%2Dcolor%3A%20%23d0d0d0%3B%0A%20%20%20%20background%2Drepeat%3A%20repeat%3B%0A%20%20%20%20user%2Dselect%3A%20text%3B%0A%7D%0A%0Aa%2C%0Aa%3Ahover%2C%0Aa%3Avisited%0A%7B%0A%20%20color%20%3A%20inherit%3B%0A%7D%0A%0Adiv%23content%20%7B%0A%20%20%20%20width%3A%2095%25%3B%0A%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20margin%3A%20auto%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20min%2Dheight%3A%20calc%28100vh%20%2D%2080px%29%3B%0A%7D%0A%0A%0A%2EnotificationCount%0A%7B%0A%20background%2Dcolor%3A%23ff0000%3B%0A%20padding%2Dleft%3A3px%3B%0A%20padding%2Dright%3A1px%3B%0A%20padding%2Dtop%3A1px%3B%0A%20padding%2Dbottom%3A1px%3B%0A%7D%0A%0Adiv%23header%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23404040%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20padding%3A%200%3B%0A%20%20%20%20margin%3A%200%3B%0A%20%20%20%20color%3A%20%23ffffff%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20flex%2Ddirection%3Arow%3B%0A%7D%0A%0A%23headerBlock1%0A%7B%0A%20%20%20%20width%3A%2050%25%3B%0A%20%20%20%20display%3Aflex%3B%0A%20%20%20%20align%2Ditems%3Acenter%3B%0A%7D%0A%0Aa%23headerTitle%0A%7B%0A%20%20%20%20font%2Dsize%3A%202%2E25em%3B%0A%20%20%20%20font%2Dfamily%3A%20Lobster%2CTahoma%2CArial%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20padding%2Dleft%3A32px%3B%0A%20%20%20%20padding%2Dright%3A32px%3B%0A%7D%0A%0A%23headerSearch%0A%7B%0A%20%20%20%20display%3A%20inline%2Dblock%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20width%3A%20300px%3B%0A%7D%0A%0Ainput%5Btype%3Dsearch%5D%23mySearch%0A%7B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20border%2Dradius%3A%206px%3B%0A%20%20%20%20border%3A%201px%20solid%20black%3B%0A%20%20%20%20padding%3A12px%3B%0A%7D%0A%0A%23headerBlock2%0A%7B%0A%20%20%20%20width%3A%2050%25%3B%0A%20%20%20%20margin%2Dleft%3A%20auto%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20justify%2Dcontent%3A%20flex%2Dend%3B%0A%7D%0A%0A%0Aa%23headerTitle%3Ahover%0A%7B%0A%20%20%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Aa%2EheaderLinks%0A%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20padding%2Dtop%3A%2014px%3B%0A%20%20%20%20padding%2Dbottom%3A%2014px%3B%0A%20%20%20%20padding%2Dleft%3A%2014px%3B%0A%20%20%20%20padding%2Dright%3A%2014px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20transition%3A%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%7D%0A%0A%23footer%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%2864%2C64%2C64%2C0%2E25%29%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20display%3A%20flex%3B%0A%20%20%20%20justify%2Dcontent%3A%20space%2Dbetween%3B%0A%20%20%20%20flex%2Dwrap%3A%20wrap%3B%0A%7D%0A%0A%23footer%20div%0A%7B%0A%20%20%20%20padding%2Dtop%3A10px%3B%0A%20%20%20%20padding%2Dbottom%3A0px%3B%0A%20%20%20%20padding%2Dleft%3A16px%3B%0A%20%20%20%20padding%2Dright%3A16px%3B%0A%7D%0A%0A%23footer%20div%20ul%0A%7B%0A%20%20%20%20margin%2Dleft%3A0px%3B%0A%20%20%20%20padding%2Dleft%3A16px%3B%0A%7D%0A%0A%23footer%20div%20ul%20li%0A%7B%0A%20%20%20%20padding%2Dtop%3A6px%3B%0A%7D%0A%0Aa%2Eregular%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Ddecoration%3Anone%0A%7D%0A%0Aa%2Eregular%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0Aa%2Euser%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Ddecoration%3Anone%3B%0A%7D%0A%0Aa%2Euser%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%20%20text%2Ddecoration%3A%20underline%3B%0A%7D%0A%0A%2EuiButton%0A%7B%0A%20%20%20%20border%3A%20none%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20width%3A%2022px%3B%0A%20%20%20%20height%3A%2022px%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%7D%0A%0A%2EuiButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%201px%201px%20%23808080%2C%200px%200px%201px%201px%20%23808080%3B%0A%7D%0A%0A%2EuiDivBUtton%0A%7B%0A%20%20%20%20cursor%3Apointer%3B%0A%7D%0A%0A%2EuiDivBUtton%3Ahover%0A%7B%0A%20%20%20%20color%3A%20%23ffffff%3B%0A%7D%0A%0A%0A%2Edialog%0A%7B%0A%20%20%20%20display%3A%20block%3B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%20%20%20%20color%3A%20%23000000%3B%0A%20%20%20%20border%3A1px%20solid%20%23000%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20text%2Dalign%3Aleft%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20box%2Dshadow%3A4px%204px%206px%200px%20rgba%280%2C0%2C0%2C0%2E5%29%3B%0A%20%20%20%20overflow%3A%20hidden%3B%0A%20%20%20%20z%2Dindex%3A1000%3B%0A%20%20%20%20visibility%3A%20hidden%3B%0A%20%20%20%20opacity%3A0%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20transition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%7D%0A%0A%2EdialogHeader%0A%7B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A32px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20background%2Dcolor%3A%20%23808080%3B%0A%20%20%20%20cursor%3Amove%3B%0A%7D%0A%0A%2EdialogTitle%0A%7B%0A%20%20%20%20left%3A%2012px%3B%0A%20%20%20%20top%3A%204px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%3A%200px%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20color%3A%23000000%3B%0A%20%20%20%20font%2Dsize%3A1%2E5em%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20user%2Dselect%3A%20none%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dnone%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20none%3B%0A%7D%0A%0A%2EdialogOverlay%0A%7B%0A%20%20%20%20z%2Dindex%3A1000%3B%0A%0A%20%20%20%20visibility%3A%20hidden%3B%0A%20%20%20%20opacity%3A0%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%20%20%20%20transition%3A%20opacity%200%2E25s%20linear%2Cvisibility%200%2E25s%20linear%3B%0A%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20position%3Aabsolute%3B%0A%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C%2E4%29%3B%0A%7D%0A%0A%2EviewsIcon%2C%20%2ElikesIcon%0A%7B%0A%20%20%20%20border%3A%20none%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20display%3Ainline%2Dblock%3B%0A%20%20%20%20background%2Drepeat%3Ano%2Drepeat%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20padding%3A0px%3B%0A%20%20%20%20padding%2Dright%3A%202px%3B%0A%20%20%20%20margin%3A0px%3B%0A%20%20%20%20position%3Arelative%3B%0A%7D%0A%0A%2EuserPictureSmall%0A%7B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%3A%201px%20solid%20%23000000%3B%0A%20%20%20%20width%3A32px%3B%0A%20%20%20%20height%3A32px%3B%0A%7D%0A%0A%2EdialogCloseButton%0A%7B%0A%20%20%20%20right%3A8px%3B%0A%20%20%20%20top%3A%204px%3B%0A%20%20%20%20width%3A22px%3B%0A%20%20%20%20height%3A22px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20background%2Dimage%3A%20url%28%22%2Fimg%2Fclose%2Epng%22%29%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%7D%0A%0A%2EdialogCloseButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%204px%202px%20%23ffffff%2C%200px%200px%204px%202px%20%23ffffff%3B%0A%7D%0A%0A%2EdialogContentButtons%0A%7B%0A%20%20%20%20%20padding%3A0%3B%0A%20%20%20%20%20border%3A0%3B%0A%20%20%20%20%20text%2Dalign%3A%20justify%3B%0A%20%20%20%20%20left%3A%2024px%3B%0A%20%20%20%20%20bottom%3A40px%3B%0A%20%20%20%20%20position%3Aabsolute%3B%0A%7D%0A%0A%2EdialogButton%0A%7B%0A%20%20%20%20text%2Dalign%3A%20center%3B%0A%20%20%20%20vertical%2Dalign%3A%20middle%3B%0A%20%20%20%20display%3A%20inline%2Dblock%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20padding%2Dbottom%3A5px%3B%0A%20%20%20%20padding%2Dtop%3A4px%3B%0A%20%20%20%20padding%2Dleft%3A%208px%3B%0A%20%20%20%20padding%2Dright%3A%208px%3B%0A%20%20%20%20margin%2Dleft%3A4px%3B%0A%20%20%20%20margin%2Dright%3A4px%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20color%3A%23000000%3B%0A%20%20%20%20width%3A%2080px%3B%0A%20%20%20%20%2Dmoz%2Dtransition%3A%20%20%20%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%20%20%20%20transition%3A%20%20%20%20%20%20%20%20%20background%2Dcolor%200%2E15s%20linear%2C%20color%200%2E15s%20linear%3B%0A%7D%0A%0A%2EdialogButton%3Ahover%0A%7B%0A%20%20background%2Dcolor%3A%23808080%3B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0A%2EdialogCloseButton%3Ahover%0A%7B%0A%20%20%20%20box%2Dshadow%3A%20inset%200px%200px%204px%202px%20%23ffffff%2C%200px%200px%204px%202px%20%23ffffff%3B%0A%7D%0A%0A%2EdialogContent%0A%7B%0A%20%20%20%20color%3A%20inherit%3B%0A%20%20%20%20overflow%3A%20auto%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%2032px%3B%0A%20%20%20%20position%3Aabsolute%0A%7D%0A%0A%2EdialogContentBody%0A%7B%0A%20%20%20%20color%3A%20inherit%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3Aauto%3B%0A%20%20%20%20padding%2Dtop%3A24px%3B%0A%20%20%20%20padding%2Dbottom%3A24px%3B%0A%20%20%20%20padding%2Dleft%3A24px%3B%0A%20%20%20%20padding%2Dright%3A24px%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%7D%0A%0A%2EformButton%0A%7B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%09color%3A%23ffffff%3B%0A%09border%3Anone%3B%0A%20%20%20%20text%2Dalign%3Acenter%3B%0A%09background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%09padding%2Dleft%3A8px%3B%0A%09padding%2Dright%3A8px%3B%0A%09padding%2Dtop%3A4px%3B%0A%09padding%2Dbottom%3A4px%3B%0A%20%20%20%20cursor%3Apointer%3B%0A%20%20%20%20min%2Dwidth%3A80px%3B%0A%7D%0A%2EformInput%20%7B%0A%20%20%20%20border%2Dradius%3A%206px%3B%0A%20%20%20%20border%3A%201px%20solid%20black%3B%0A%20%20%20%20padding%3A%204px%3B%0A%20%20%20%20border%3A%20none%3B%0A%7D%0A%2EformButton%3Ahover%20%7B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%7D%0A%2EformButton%3Adisabled%0A%7B%0A%09color%3A%23b0b0b0%3B%0A%09background%2Dcolor%3A%23808080%3B%0A%7D%0A%0A%2EformButtonSmall%0A%7B%0A%20%20%20%20color%3A%23ffffff%3B%0A%20%20%20%20border%3Anone%3B%0A%20%20%20%20text%2Dalign%3Acenter%3B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20padding%2Dleft%3A2px%3B%0A%20%20%20%20padding%2Dright%3A2px%3B%0A%20%20%20%20padding%2Dtop%3A2px%3B%0A%20%20%20%20padding%2Dbottom%3A2px%3B%0A%20%20%20%20cursor%3Apointer%3B%0A%20%20%20%20min%2Dwidth%3A40px%3B%0A%7D%0A%0A%2EformButtonSmall%3Ahover%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23e0e0e0%3B%0A%7D%0A%0A%2EformButtonSmall%3Adisabled%0A%7B%0A%20%20%20%20color%3A%23b0b0b0%3B%0A%20%20%20%20background%2Dcolor%3A%23808080%3B%0A%7D%0A%0A%2EformButtonSmall%2Edisabled2%2C%0A%2EformButton%2Edisabled2%20%7B%20color%3A%23b0b0b0%3B%20background%2Dcolor%3A%23808080%3B%20pointer%2Devents%3A%20none%3B%20%7D%0A%0A%2EinputForm%0A%7B%0A%20%20%20%20padding%2Dleft%3A2%25%3B%0A%20%20%20%20padding%2Dright%3A2%25%3B%0A%20%20%20%20resize%3A%20none%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20background%2Dcolor%3A%23e0e0e0%3B%0A%20%20%20%20outline%3A%20none%3B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20border%3A%201px%20solid%20%23808080%3B%0A%20%20%20%20color%3Ainherit%3B%0A%7D%0A%0A%2EinputForm%3Afocus%0A%7B%0A%20%20%20%20border%3A%201px%20solid%20%23AFCDD8%3B%0A%20%20%20%20background%2Dcolor%3A%20%23EBF2F4%3B%0A%7D%0A%0A%2EtransparentPannel%0A%7B%0A%20%20%20%20background%2Dcolor%3Argba%2864%2C64%2C64%2C0%2E1%29%3B%0A%20%20%20%20padding%3A16px%3B%0A%7D%0A%0A%2Ecomment%2C%20%2EcommentSelf%2C%20%2EcommentNew%0A%7B%0A%20%20%20%20border%2Dradius%3A%204px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20margin%2Dleft%3A%200px%3B%0A%20%20%20%20margin%2Dright%3A%200px%3B%0A%20%20%20%20margin%2Dtop%3A%200px%3B%0A%20%20%20%20margin%2Dbottom%3A%206px%3B%0A%0A%20%20%20%20padding%3A%2014px%3B%0A%20%20%20%20display%3A%20grid%3B%0A%20%20%20%20grid%2Dtemplate%2Dcolumns%3A%2032px%20auto%208px%3B%0A%20%20%20%20grid%2Dtemplate%2Drows%3A%201fr%3B%0A%20%20%20%20grid%2Dgap%3A8px%3B%0A%7D%0A%0A%2Ecomment%3Anth%2Dchild%28even%29%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%2864%2C64%2C64%2C0%2E1%29%3B%0A%7D%0A%0A%2Ecomment%3Anth%2Dchild%28odd%29%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%28128%2C128%2C128%2C0%2E1%29%3B%0A%7D%0A%0A%2EcommentSelf%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20rgba%28240%2C160%2C64%2C0%2E1%29%3B%0A%7D%0A%0A%2EcommentNew%0A%7B%0A%20%20%20%20padding%2Dright%3A%200px%3B%0A%20%20%20%20grid%2Dtemplate%2Dcolumns%3A%2040px%20auto%3B%0A%7D%0A%0A%2EcommentContent%0A%7B%0A%20%20%20%20vertical%2Dalign%3A%20top%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20word%2Dbreak%3A%20break%2Dall%3B%0A%20%20%20%20word%2Dbreak%3A%20break%2Dword%3B%0A%20%20%20%20white%2Dspace%3A%20pre%2Dwrap%3B%0A%20%20%20%20white%2Dspace%3A%20%2Dmoz%2Dpre%2Dwrap%3B%0A%7D%0A%0A%0A%2F%2A%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%20media%20resolutions%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%20%2A%2F%0A%0A%40media%20screen%20and%20%28max%2Dwidth%3A799px%29%0A%7B%0A%20%20%20%20div%23header%20%7Bflex%2Ddirection%3Acolumn%3B%20%7D%0A%20%20%20%20%23headerBlock1%20%7B%20width%3A100%25%3B%20%7D%0A%20%20%20%20%23headerBlock2%20%7B%20width%3A100%25%3B%20justify%2Dcontent%3A%20space%2Daround%3B%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A200px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A200px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A130px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A10px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A800px%29%20and%20%28max%2Dwidth%3A1279px%29%0A%7B%0A%20%20%20%20body%20%7B%20font%2Dsize%3A%209px%3B%20%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20250px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A250px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A130px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A11px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1280px%29%20and%20%28max%2Dwidth%3A1439px%29%0A%7B%0A%20%20%20%20body%20%7B%20font%2Dsize%3A%2010px%3B%20%7D%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A28px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A180px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A12px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1440px%29%20and%20%28max%2Dwidth%3A1919px%29%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A28px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A180px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A12px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A1920px%29%20and%20%28max%2Dwidth%3A2559px%29%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A32px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A220px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A16px%3B%20%7D%0A%7D%0A%0A%40media%20screen%20and%20%28min%2Dwidth%3A2560px%29%20%0A%7B%0A%20%20%20%20div%23headerSearch%20%7Bwidth%3A%20300px%3B%7D%0A%20%20%20%20input%23mySearch%20%7B%20width%3A300px%3B%20left%3A21px%3B%20height%3A22px%3B%20border%2Dradius%3A6px%3B%20padding%2Dleft%3A8px%3B%20padding%2Dright%3A8px%3B%20%7D%0A%20%20%20%20%2EdialogHeader%20%7B%20height%3A32px%3B%20%7D%0A%20%20%20%20%2EpreviewText%20%7B%20width%3A220px%3B%20%7D%0A%20%20%20%20%2EtransparentPannel%20%7B%20padding%3A16px%3B%20%7D%0A%7D%0Abody%0A%7B%0A%20%20%20%20background%2Dimage%3A%20url%28%22%2Fimg%2Fthemes%2Fclassic%2Fbackground%2Ejpg%22%29%3B%0A%7D%0A%3C%2Fstyle%3E%0A%0A%3Cstyle%3E%0Abody%0A%7B%0A%20%20%20%20background%2Dcolor%3A%20%23000000%3B%0A%20%20%20%20color%3A%20%23c0c0c0%3B%0A%20%20%20%20font%2Dsize%3A12px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ATahoma%2CArial%3B%0A%20%20%20%20top%3A0px%3B%0A%20%20%20%20left%3A0px%3B%0A%20%20%20%20width%3A100%25%3B%0A%20%20%20%20height%3A100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%20%20%20%20overflow%3Ahidden%3B%0A%20%20%20%20position%3Aabsolute%3B%0A%20%20%20%20user%2Dselect%3A%20none%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dnone%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20none%3B%0A%7D%0A%0Adiv%23player%0A%7B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%7D%0A%0Adiv%23playerInteraction%0A%7B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20padding%3A0%3B%0A%20%20%20%20margin%3A0%3B%0A%7D%0A%0A%2EplayerCanvas%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%7D%0A%0Adiv%23noWebGL%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20cursor%3A%20pointer%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20border%2Dradius%3A%204px%204px%200px%200px%3B%0A%20%20%20%20background%2Dcolor%3A%23000000%3B%0A%20%20%20%20visibility%3A%20hidden%3B%0A%7D%0A%0Aimg%23noWebGL%5FShaderImage%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20border%2Dradius%3A%204px%204px%200px%200px%3B%0A%7D%0A%0Aspan%23noWebGL%5FText%0A%7B%0A%20%20%20%20left%3A8px%3B%0A%20%20%20%20font%2Dsize%3A%201%2E5em%3B%0A%20%20%20%20border%3A%200px%3B%0A%20%20%20%20color%3A%23ff0000%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Adiv%23playerBar%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20bottom%3A%200px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%2030px%3B%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C0%2E8%29%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%0A%20%20%20%20transition%3A%20bottom%201s%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20bottom%201s%3B%20%2F%2A%20Safari%20%2A%2F%0A%7D%0A%0Adiv%23playerBar%2EisVisible%0A%7B%0A%20%20%20%20bottom%3A0px%3B%0A%7D%0A%0Adiv%23playerBar%2EisNotVisible%0A%7B%0A%20%20%20%20bottom%3A%2D31px%3B%0A%7D%0A%0A%2EmyFull%0A%7B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0A%2EplayerCanvas%5Ffull%2Dscreen%2C%0A%2EplayerCanvas%3Afull%2Dscreen%2C%0A%2EplayerCanvas%3Afullscreen%2C%0A%2EplayerCanvas%3A%2Dwebkit%2Dfull%2Dscreen%2C%0A%2EplayerCanvas%3A%2Dmoz%2Dfull%2Dscreen%0A%7B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%20100%25%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0A%0Adiv%23shaderInfo%0A%7B%0A%20%20%20%20background%2Dcolor%3Argba%280%2C0%2C0%2C0%2E8%29%3B%0A%20%20%20%20top%3A%200px%3B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20width%3A%20100%25%3B%0A%20%20%20%20height%3A%2030px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20margin%3A%200px%3B%0A%20%20%20%20padding%3A%200px%3B%0A%0A%20%20%20%20transition%3A%20top%201s%3B%0A%20%20%20%20%2Dwebkit%2Dtransition%3A%20top%201s%3B%20%2F%2A%20Safari%20%2A%2F%0A%7D%0A%0Adiv%23shaderInfo%2EisVisible%0A%7B%0A%20%20%20%20top%3A0px%3B%0A%7D%0Adiv%23shaderInfo%2EisNotVisible%0A%7B%0A%20%20%20%20top%3A%2D31px%3B%0A%7D%0A%0Aa%2EshaderTitle%0A%7B%0A%20%20%20%20font%2Dsize%3A18px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dweight%3Abold%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20color%3A%20%23c0c0c0%3B%0A%20%20%20%20text%2Ddecoration%3A%20none%3B%0A%20%20%20%20margin%2Dleft%3A6px%3B%0A%20%20%20%20margin%2Dright%3A6px%3B%0A%7D%0A%0Aa%2EshaderTitle%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%0A%0Adiv%23shaderStats%0A%7B%0A%20%20%20%20top%3A%208px%3B%0A%20%20%20%20right%3A%204px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%2Dleft%3A0%3B%0A%20%20%20%20padding%2Dright%3A0%3B%0A%20%20%20%20margin%2Dleft%3A0%3B%0A%20%20%20%20margin%2Dright%3A0%3B%0A%7D%0A%0Adiv%23shaderLike%0A%7B%0A%20%20%20%20left%3A%200px%3B%0A%20%20%20%20top%3A%20150px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%7D%0A%0Aa%2EshadertoyLink%0A%7B%0A%20%20%20%20color%3A%23c0c0c0%3B%0A%20%20%20%20font%2Dsize%3A16px%3B%0A%20%20%20%20font%2Dstyle%3Anormal%3B%0A%20%20%20%20font%2Dweight%3Anormal%3B%0A%20%20%20%20font%2Dfamily%3ALobster%2CTahoma%2CArial%3B%0A%20%20%20%20text%2Dalign%3A%20left%3B%0A%20%20%20%20top%3A%205px%3B%0A%20%20%20%20right%3A%206px%3B%0A%20%20%20%20position%3A%20absolute%3B%0A%20%20%20%20padding%2Dleft%3A0%3B%0A%20%20%20%20padding%2Dright%3A0%3B%0A%20%20%20%20margin%2Dleft%3A0%3B%0A%20%20%20%20margin%2Dright%3A0%3B%0A%20%20%20%20text%2Ddecoration%3Anone%3B%0A%0A%20%20%20%20user%2Dselect%3A%20text%3B%0A%20%20%20%20%2Dmoz%2Duser%2Dselect%3A%20%2Dmoz%2Dtext%3B%0A%20%20%20%20%2Dwebkit%2Duser%2Dselect%3A%20text%3B%0A%7D%0Aa%2EshadertoyLink%3Ahover%0A%7B%0A%20%20color%20%3A%20%23ff8020%3B%0A%7D%0A%3C%2Fstyle%3E%0A%0A%20%20%20%20%3Cscript%3Evar%20gShaderID%3D%223cSXzW%22%3Bvar%20gInvisIfFail%3Dnull%3Bvar%20gTime%3D%2210%22%3Bvar%20gShowGui%3Dtrue%3Bvar%20gPaused%3Dtrue%3Bvar%20gMuted%3Dfalse%3B%3C%2Fscript%3E%0A%0A%20%20%20%20%3Cscript%20src%3D%22%2Flib%2FpiLibs%2Ejs%3Fv%3D86%22%3E%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%20src%3D%22%2Fjs%2Feffect%2Ejs%3Fv%3D86%22%3E%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%0A%0Aconst%20kMaxCompileTime%20%3D%2010%2E0%3B%0A%0Afunction%20iReportCrash%28shaderID%29%0A%7B%0A%20%20%20%20let%20req%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20req%2Eonload%20%3D%20function%20%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20let%20jsn%20%3D%20req%2Eresponse%3B%0A%20%20%20%20%20%20%20%20if%20%28jsn%20%3D%3D%3D%20null%29%20return%3B%0A%20%20%20%20%20%20%20%20if%20%28jsn%2Eresult%20%3D%3D%3D%200%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2F%20yep%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%3B%0A%20%20%20%20req%2Eopen%28%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%29%3B%0A%20%20%20%20req%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20req%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20req%2Esend%28%20%22s%3D%22%20%2B%20shaderID%20%2B%20%22%26r%3D2%22%20%29%3B%0A%7D%0A%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%3B%0A%0Aclass%20SoundCloud%20%0A%7B%0A%20%20%20%20resolve%28url%2C%20callback%2C%20errcallback%29%20%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20url2%20%3D%20%22surl%3D%22%20%2B%20url%3B%0A%20%20%20%20%20%20%20%20var%20mHttpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eopen%28%20%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%20%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eonload%20%3D%20function%28%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20jsn%20%3D%20mHttpReq%2Eresponse%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20jsn%3D%3D%3Dnull%20%29%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20jsn%2Eresult%21%3D%3D0%20%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20callback%28JSON%2Eparse%28jsn%2Esoundcloud%29%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%20else%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Eonerror%20%3D%20function%28%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20errcallback%280%29%3B%0A%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20mHttpReq%2Esend%28%20url2%20%29%3B%0A%20%20%20%20%7D%0A%7D%0A%0Aconst%20SC%20%3D%20new%20SoundCloud%28%29%3B%0A%3C%2Fscript%3E%0A%20%20%20%20%3Cscript%3E%22use%20strict%22%0A%0Avar%20gShaderToy%20%3D%20null%3B%0A%0Afunction%20ShaderToy%28%20parentElement%20%29%0A%7B%0A%20%20%20%20if%28%20parentElement%3D%3D%3Dnull%20%29%20return%3B%0A%0A%20%20%20%20this%2EmAudioContext%20%3D%20null%3B%0A%20%20%20%20this%2EmCreated%20%3D%20false%3B%0A%20%20%20%20this%2EmHttpReq%20%3D%20null%3B%0A%20%20%20%20this%2EmEffect%20%3D%20null%3B%0A%20%20%20%20this%2EmTo%20%3D%20null%3B%0A%20%20%20%20this%2EmTOffset%20%3D%20gTime%20%2A%201000%3B%0A%20%20%20%20this%2EmCanvas%20%3D%20null%3B%0A%20%20%20%20this%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20null%3B%0A%20%20%20%20this%2EmIsPaused%20%3D%20gPaused%3B%0A%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20this%2EmInfo%20%3D%20null%3B%0A%20%20%20%20this%2EmCode%20%3D%20null%3B%0A%0A%20%20%20%20this%2EmCanvas%20%3D%20document%2EgetElementById%28%22demogl%22%29%3B%0A%20%20%20%20this%2EmCanvas%2EtabIndex%20%3D%20%220%22%3B%0A%0A%20%20%20%20var%20ww%20%3D%20parentElement%2EoffsetWidth%3B%0A%20%20%20%20var%20hh%20%3D%20parentElement%2EoffsetHeight%3B%0A%0A%20%20%20%20var%20me%20%3D%20this%3B%0A%20%20%20%20this%2EmCanvas%2Ewidth%20%20%3D%20ww%3B%0A%20%20%20%20this%2EmCanvas%2Eheight%20%3D%20hh%3B%0A%0A%20%20%20%20this%2EmHttpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20this%2EmTo%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20this%2EmTf%20%3D%20this%2EmTOffset%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20this%2EmTo%3B%0A%20%20%20%20this%2EmMouseIsDown%20%3D%20false%3B%0A%20%20%20%20this%2EmMouseOriX%20%3D%200%3B%0A%20%20%20%20this%2EmMouseOriY%20%3D%200%3B%0A%20%20%20%20this%2EmMousePosX%20%3D%200%3B%0A%20%20%20%20this%2EmMousePosY%20%3D%200%3B%0A%0A%0A%20%20%20%20%2F%2F%20%2D%2D%2D%20audio%20context%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0A%20%20%20%20this%2EmAudioContext%20%3D%20piCreateAudioContext%28%29%3B%0A%0A%20%20%20%20if%28%20this%2EmAudioContext%3D%3Dnull%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%2F%2Falert%28%20%22no%20audio%21%22%20%29%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eonmousedown%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20pos%20%3D%20piGetCoords%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriX%20%3D%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%28ev%2EpageX%20%2D%20pos%2EmX%29%2Ame%2EmCanvas%2Ewidth%2Fme%2EmCanvas%2EoffsetWidth%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriY%20%3D%20me%2EmCanvas%2Eheight%20%2D%20%28ev%2EpageY%20%2D%20pos%2EmY%29%2Ame%2EmCanvas%2Eheight%2Fme%2EmCanvas%2EoffsetHeight%3B%0A%20%20%20%20%20%20%20%20me%2EmMousePosX%20%3D%20me%2EmMouseOriX%3B%0A%20%20%20%20%20%20%20%20me%2EmMousePosY%20%3D%20me%2EmMouseOriY%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseIsDown%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonmousemove%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmMouseIsDown%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20pos%20%3D%20piGetCoords%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmMousePosX%20%3D%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%28ev%2EpageX%20%2D%20pos%2EmX%29%2Ame%2EmCanvas%2Ewidth%2Fme%2EmCanvas%2EoffsetWidth%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmMousePosY%20%3D%20me%2EmCanvas%2Eheight%20%2D%20%28ev%2EpageY%20%2D%20pos%2EmY%29%2Ame%2EmCanvas%2Eheight%2Fme%2EmCanvas%2EoffsetHeight%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonmouseup%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmMouseIsDown%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriX%20%3D%20%2DMath%2Eabs%28%20me%2EmMouseOriX%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmMouseOriY%20%3D%20%2DMath%2Eabs%28%20me%2EmMouseOriY%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eonkeydown%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmEffect%2ESetKeyDown%28%200%2C%20ev%2EkeyCode%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%20%20%20%20this%2EmCanvas%2Eonkeyup%20%3D%20function%28ev%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EmEffect%2ESetKeyUp%28%200%2C%20ev%2EkeyCode%20%29%3B%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20me%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20document%2EgetElementById%28%22myResetButton%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EresetTime%28%29%3B%0A%20%20%20%20%7D%0A%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20me%2EpauseTime%28%29%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20this%2EmCanvas%2Eondblclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20piIsFullScreen%28%29%3D%3Dfalse%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20piRequestFullScreen%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20piExitFullScreen%28%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%0A%20%20%20%20document%2EgetElementById%28%22myFullScreen%22%29%2Eonclick%20%3D%20function%28%20ev%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20piRequestFullScreen%28%20me%2EmCanvas%20%29%3B%0A%20%20%20%20%20%20%20%20me%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%7D%0A%0A%20%20%20%20var%20resizeCB%20%3D%20function%20%28xres%2C%20yres%29%20%7B%20me%2EmForceFrame%20%3D%20true%3B%20%7D%3B%0A%20%20%20%20var%20crashCB%20%3D%20function%20%28%29%20%7B%20%2F%2AiReportCrash%28gShaderID%29%3B%2A%2F%20%7D%3B%0A%20%20%20%20this%2EmEffect%20%3D%20new%20Effect%28null%2C%20this%2EmAudioContext%2C%20this%2EmCanvas%2C%20this%2ERefreshTexturThumbail%2C%20this%2C%20gMuted%2C%20false%2C%20resizeCB%2C%20crashCB%20%29%3B%0A%20%20%20%20this%2EmCreated%20%3D%20true%3B%0A%0A%7D%0A%0AShaderToy%2Eprototype%2EstartRendering%20%3D%20function%28%29%0A%7B%0A%20%20%20%20var%20me%20%3D%20this%3B%0A%0A%20%20%20%20function%20renderLoop2%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20requestAnimFrame%28%20renderLoop2%20%29%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%26%26%20%21me%2EmForceFrame%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmEffect%2EUpdateInputs%28%200%2C%20false%20%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20return%3B%0A%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20me%2EmForceFrame%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20var%20time%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20%20%20%20%20var%20ltime%20%3D%20me%2EmTOffset%20%2B%20time%20%2D%20me%2EmTo%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20me%2EmIsPaused%20%29%20ltime%20%3D%20me%2EmTf%3B%20else%20me%2EmTf%20%3D%20ltime%3B%0A%0A%20%20%20%20%20%20%20%20var%20dtime%20%3D%201000%2E0%20%2F%2060%2E0%3B%0A%0A%20%20%20%20%20%20%20%20me%2EmEffect%2EPaint%28ltime%2F1000%2E0%2C%20dtime%2F1000%2E0%2C%2060%2C%20me%2EmMouseOriX%2C%20me%2EmMouseOriY%2C%20me%2EmMousePosX%2C%20me%2EmMousePosY%2C%20me%2EmIsPaused%20%29%3B%0A%0A%20%20%20%20%20%20%20%20me%2EmFpsFrame%2B%2B%3B%0A%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myTime%22%29%2EtextContent%20%3D%20%28ltime%2F1000%2E0%29%2EtoFixed%282%29%3B%0A%20%20%20%20%20%20%20%20if%28%20%28time%2Dme%2EmFpsTo%29%3E1000%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20ffps%20%3D%201000%2E0%20%2A%20me%2EmFpsFrame%20%2F%20%28time%2Dme%2EmFpsTo%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myFramerate%22%29%2EtextContent%20%3D%20ffps%2EtoFixed%281%29%20%2B%20%22%20fps%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20me%2EmFpsTo%20%3D%20time%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%0A%20%20%20%20renderLoop2%28%29%3B%0A%7D%0A%0A%2F%2F%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0AShaderToy%2Eprototype%2EStop%20%3D%20function%28%29%0A%7B%0A%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Estyle%2Ebackground%3D%22url%28%27%2Fimg%2FplayEmbed%2Epng%27%29%22%3B%0A%20%20%20%20this%2EmIsPaused%20%3D%20true%3B%0A%20%20%20%20this%2EmEffect%2EStopOutputs%28%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EpauseTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20var%20time%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20if%28%20%21this%2EmIsPaused%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20this%2EStop%28%29%3B%0A%20%20%20%20%20%7D%0A%20%20%20%20else%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%22myPauseButton%22%29%2Estyle%2Ebackground%3D%22url%28%27%2Fimg%2FpauseEmbed%2Epng%27%29%22%3B%0A%20%20%20%20%20%20%20%20this%2EmTOffset%20%3D%20this%2EmTf%3B%0A%20%20%20%20%20%20%20%20this%2EmTo%20%3D%20time%3B%0A%20%20%20%20%20%20%20%20this%2EmIsPaused%20%3D%20false%3B%0A%20%20%20%20%20%20%20%20this%2EmEffect%2EResumeOutputs%28%29%3B%0A%20%20%20%20%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%20%20%20%20%7D%0A%7D%0A%0AShaderToy%2Eprototype%2EresetTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20this%2EmTOffset%20%3D%200%3B%0A%20%20%20%20this%2EmTo%20%3D%20getRealTime%28%29%3B%0A%20%20%20%20this%2EmTf%20%3D%200%3B%0A%20%20%20%20this%2EmFpsTo%20%3D%20this%2EmTo%3B%0A%20%20%20%20this%2EmFpsFrame%20%3D%200%3B%0A%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20this%2EmEffect%2EResetTime%28%29%3B%0A%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%7D%0A%0A%0AShaderToy%2Eprototype%2EPauseInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EPauseInput%28%200%2C%20id%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EMuteInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EMuteInput%28%200%2C%20id%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ERewindInput%20%3D%20function%28%20id%20%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ERewindInput%28%200%2C%20id%20%29%3B%0A%20%20%20%20this%2EmCanvas%2Efocus%28%29%3B%20%2F%2F%20put%20mouse%2Fkeyboard%20focus%20on%20canvas%0A%7D%0A%0AShaderToy%2Eprototype%2ESetTexture%20%3D%20function%28%20slot%2C%20url%20%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ENewTexture%28%200%2C%20slot%2C%20url%20%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ERefreshTexturThumbail%20%3D%20function%28%20myself%2C%20slot%2C%20img%2C%20forceFrame%2C%20gui%2C%20guiID%2C%20time%20%29%0A%7B%0A%20%20myself%2EmForceFrame%20%3D%20forceFrame%3B%0A%7D%0A%0AShaderToy%2Eprototype%2EGetTotalCompilationTime%20%3D%20function%28%29%0A%7B%0A%20%20%20%20return%20this%2EmEffect%2EGetTotalCompilationTime%28%29%3B%0A%7D%0A%0AShaderToy%2Eprototype%2ELoad%20%3D%20function%28%20jsn%20%29%0A%7B%0A%20%20%20%20try%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20res%20%3D%20this%2EmEffect%2ELoad%28%20jsn%2C%20false%20%29%3B%0A%20%20%20%20%20%20%20%20this%2EmCode%20%3D%20res%2EmShader%3B%0A%0A%20%20%20%20%20%20%20%20if%28%20res%2EmFailed%3D%3D%3Dfalse%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2Fthis%2EresetTime%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20this%2EmForceFrame%20%3D%20true%3B%0A%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20this%2EmInfo%20%3D%20jsn%2Einfo%3B%0A%0A%20%20%20%20%20%20%20%20return%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20mFailed%3A%20false%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mDate%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Edate%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mViewed%20%20%20%20%20%20%3A%20jsn%2Einfo%2Eviewed%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mName%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Ename%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mUserName%20%20%20%20%3A%20jsn%2Einfo%2Eusername%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mDescription%20%3A%20jsn%2Einfo%2Edescription%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mLikes%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Elikes%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mPublished%20%20%20%3A%20jsn%2Einfo%2Epublished%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mHasLiked%20%20%20%20%3A%20jsn%2Einfo%2Ehasliked%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20mTags%20%20%20%20%20%20%20%20%3A%20jsn%2Einfo%2Etags%20%7D%3B%0A%0A%20%20%20%20%7D%0A%20%20%20%20catch%28%20e%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20return%20%7B%20mFailed%3Atrue%20%7D%3B%0A%20%20%20%20%7D%0A%7D%0A%0AShaderToy%2Eprototype%2ECompile%20%3D%20function%20%28onResolve%29%0A%7B%0A%20%20%20%20this%2EmEffect%2ECompile%28true%2C%20onResolve%29%3B%0A%7D%0A%0Afunction%20iCompileAndStart%28%20viewerParent%2C%20jsnShader%20%29%0A%7B%0A%20%20%20%20gShaderToy%20%3D%20new%20ShaderToy%28%20viewerParent%2C%20null%20%29%3B%0A%20%20%20%20if%28%20%21gShaderToy%2EmCreated%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20if%28%20gInvisIfFail%21%3D%3Dnull%20%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20var%20div%20%3D%20document%2EcreateElement%28%22img%22%29%3B%0A%20%20%20%20%20%20%20%20%20%20div%2Esrc%20%3D%20gInvisIfFail%3B%0A%20%20%20%20%20%20%20%20%20%20var%20root%20%3D%20document%2EgetElementsByTagName%28%20%22body%22%20%29%5B0%5D%3B%0A%20%20%20%20%20%20%20%20%20%20root%2EreplaceChild%28%20div%2C%20viewerParent%20%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20return%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20var%20gRes%20%3D%20gShaderToy%2ELoad%28jsnShader%5B0%5D%29%0A%20%20%20%20if%20%28gRes%2EmFailed%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20gShaderToy%2EpauseTime%28%29%3B%0A%20%20%20%20%20%20%20%20gShaderToy%2EresetTime%28%29%3B%0A%20%20%20%20%7D%0A%20%20%20%20else%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20let%20st%20%3D%20document%2EgetElementById%28%22shaderTitle%22%29%3B%0A%20%20%20%20%20%20%20%20let%20str%20%3D%20%22%3Ca%20class%3D%5C%22shaderTitle%5C%22%20target%3D%5C%22%5Fblank%5C%22%20href%3D%5C%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%2Fview%2F%22%20%2B%20gShaderID%20%2B%20%22%5C%22%3E%22%20%2B%20htmlEntities%28gRes%2EmName%29%20%2B%20%22%3C%2Fa%3E%22%3B%0A%20%20%20%20%20%20%20%20str%20%2B%3D%20%22%3Cspan%3Eby%20%22%20%2B%20htmlEntities%28gRes%2EmUserName%29%20%2B%20%22%20in%20%22%20%2B%20piGetTime%28gRes%2EmDate%29%20%2B%20%22%3C%2Fspan%3E%22%3B%0A%20%20%20%20%20%20%20%20st%2EinnerHTML%20%3D%20str%3B%0A%0A%20%20%20%20%20%20%20%20let%20shaderStats%20%3D%20document%2EgetElementById%28%22shaderStats%22%29%3B%0A%20%20%20%20%20%20%20%20shaderStats%2EinnerHTML%20%3D%20%22%3Cimg%20src%3D%27%2Fimg%2FviewsEmbed%2Epng%27%20class%3D%27viewsIcon%27%3E%3C%2Fimg%3E%3Cspan%3E%22%20%2B%20gRes%2EmViewed%20%2B%20%22%3C%2Fspan%3E%20%20%20%20%26nbsp%3B%26nbsp%3B%20%20%3Cimg%20src%3D%27%2Fimg%2FlikesEmbed%2Epng%27%20class%3D%27likesIcon%27%3E%3C%2Fimg%3E%3Cspan%3E%22%20%2B%20gRes%2EmLikes%20%2B%20%22%3C%2Fspan%3E%22%3B%0A%0A%0A%20%20%20%20%20%20%20%20gShaderToy%2ECompile%28%20function%20%28worked%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28%21worked%29%20return%3B%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20%2F%2A%0A%20%20%20%20%20%20%20%20%20%20%20%20let%20compilationTime%20%3D%20gShaderToy%2EGetTotalCompilationTime%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28compilationTime%20%3E%20kMaxCompileTime%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20iReportCrash%28gShaderID%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2A%2F%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20if%20%28gShaderToy%2EmIsPaused%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20gShaderToy%2EStop%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%0A%0A%20%20%20%20%20%20%20%20%20%20%20%20gShaderToy%2EstartRendering%28%29%3B%0A%20%20%20%20%20%20%20%20%7D%29%3B%0A%20%20%20%20%7D%0A%0A%7D%0A%0Afunction%20watchInit%28%29%0A%7B%0A%20%20%20%20%20%20%2F%2F%2D%2D%20shadertoy%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%20%20%20%20var%20viewerParent%20%3D%20document%2EgetElementById%28%22player%22%29%3B%0A%0A%20%20%20%20if%28%20gShowGui%3D%3D%3Dfalse%20%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20viewerParent%2EaddEventListener%28%20%22mouseover%22%2C%20function%28e%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isVisible%27%3B%0A%20%20%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isVisible%27%3B%0A%20%20%20%20%7D%2C%20true%20%29%3B%0A%0A%20%20%20%20viewerParent%2EaddEventListener%28%20%22mouseout%22%2C%20function%28e%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20var%20tt%20%3D%20e%2ErelatedTarget%20%7C%7C%20e%2EtoElement%3B%0A%0A%20%20%20%20%20%20%2F%2Fconsole%2Elog%28%20%22OUT%20%20%20t%3A%20%22%20%2B%20e%2Etarget%2Eid%20%2B%20%22%20%20%20%20ct%3A%20%22%20%2B%20e%2EcurrentTarget%2Eid%20%2B%20%22%20%20%20%20this%3A%20%22%20%2B%20this%2Eid%20%2B%20%22%20%20%20%20target%3A%20%22%20%2B%20%28%28tt%3D%3Dnull%29%3F%22none%22%3Att%2Eid%29%20%29%3B%0A%20%20%20%20%20%20if%28%20tt%21%3D%3Dnull%20%29%20return%3B%0A%0A%20%20%20%20%20%20document%2EgetElementById%28%27shaderInfo%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%20%20document%2EgetElementById%28%27playerBar%27%29%2EclassName%3D%27isNotVisible%27%3B%0A%20%20%20%20%7D%2C%20true%20%29%3B%0A%0A%20%20%20%20document%2Ebody%2EaddEventListener%28%20%22keydown%22%2C%20function%28e%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20var%20ele%20%3D%20piGetSourceElement%28e%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20if%28%20e%2EkeyCode%3D%3D%3D8%20%26%26%20ele%3D%3D%3Ddocument%2Ebody%20%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20e%2EpreventDefault%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%20%29%3B%0A%0A%0A%20%20%20%20%2F%2F%2D%2D%20get%20info%20%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%2D%0A%0A%20%20%20%20var%20httpReq%20%3D%20new%20XMLHttpRequest%28%29%3B%0A%20%20%20%20httpReq%2Eopen%28%20%22POST%22%2C%20%22%2Fshadertoy%22%2C%20true%20%29%3B%0A%20%20%20%20httpReq%2EresponseType%20%3D%20%22json%22%3B%0A%20%20%20%20httpReq%2EsetRequestHeader%28%27Content%2DType%27%2C%20%27application%2Fx%2Dwww%2Dform%2Durlencoded%27%29%3B%0A%20%20%20%20var%20str%20%3D%20%22%7B%20%5C%22shaders%5C%22%20%3A%20%5B%5C%22%22%20%2B%20gShaderID%20%2B%20%22%5C%22%5D%20%7D%22%3B%0A%20%20%20%20str%20%3D%20%22s%3D%22%20%2B%20encodeURIComponent%28str%29%20%2B%20%22%26nt%3D0%26nl%3D0%26np%3D0%22%3B%3B%0A%20%20%20%20httpReq%2Eonload%20%3D%20function%28%29%0A%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20var%20jsnShader%20%3D%20httpReq%2Eresponse%3B%0A%0A%20%20%20%20%20%20%20%20if%20%28jsnShader%5B0%5D%2Einfo%2EusePreview%20%3D%3D%3D%201%29%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20let%20url%20%3D%20%22%2Fmedia%2Fshaders%2F%22%20%2B%20gShaderID%20%2B%20%22%2Ejpg%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20var%20img%20%3D%20new%20Image%28%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Estyle%20%3D%20%22width%3A100%25%3B%22%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Eonload%20%3D%20function%20%28%29%0A%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20viewerParent%2EappendChild%28img%29%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Eonerror%20%3D%20function%20%28ev%29%20%7B%20iCompileAndStart%28viewerParent%2CjsnShader%29%3B%20%7D%3B%0A%20%20%20%20%20%20%20%20%20%20%20%20img%2Esrc%20%3D%20url%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%20%20%20%20else%0A%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20iCompileAndStart%28viewerParent%2CjsnShader%29%3B%0A%20%20%20%20%20%20%20%20%7D%0A%20%20%20%20%7D%0A%20%20%20%20httpReq%2Esend%28%20str%20%20%29%3B%0A%7D%0A%3C%2Fscript%3E%0A%3C%2Fhead%3E%0A%0A%3Cbody%20onload%3D%22watchInit%28%29%22%3E%0A%0A%3C%21%2D%2D%20content%20%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%3D%20%2D%2D%3E%0A%0A%3Cdiv%20id%3D%22player%22%3E%0A%20%20%20%20%3Ccanvas%20id%3D%22demogl%22%20class%3D%22playerCanvas%22%3E%3C%2Fcanvas%3E%0A%20%20%20%20%3Cdiv%20id%3D%22noWebGL%22%3E%3Cimg%20id%3D%22noWebGL%5FShaderImage%22%3E%3C%2Fimg%3E%3Cspan%20id%3D%22noWebGL%5FText%22%3ENo%20WebGL%20available%20%3A%28%3C%2Fspan%3E%3C%2Fdiv%3E%0A%0A%0A%20%20%20%20%3Cdiv%20id%3D%22shaderInfo%22%3E%0A%20%20%20%20%20%20%20%20%3Cdiv%20%20%20id%3D%22shaderTitle%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%3Cdiv%20%20%20id%3D%22shaderStats%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fdiv%3E%0A%0A%20%20%20%20%3Cdiv%20id%3D%22playerBar%22%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myResetButton%22%20class%3D%22uiButton%22%20title%3D%22reset%20time%22%20%20%20%20%20%20style%3D%22left%3A%2016px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FrewindEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myPauseButton%22%20class%3D%22uiButton%22%20title%3D%22pause%2Fresume%22%20%20%20%20style%3D%22left%3A%2044px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FplayEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cspan%20id%3D%22myTime%22%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20style%3D%22left%3A%2088px%3Btop%3A6px%3Bposition%3Aabsolute%3Bmargin%3A0px%3Bpadding%3A0px%3Bfont%3Aitalic%20normal%2014px%20arial%2Cserif%22%3E0%3C%2Fspan%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cspan%20id%3D%22myFramerate%22%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20style%3D%22left%3A164px%3Btop%3A6px%3Bposition%3Aabsolute%3Bmargin%3A0px%3Bpadding%3A0px%3Bfont%3Aitalic%20normal%2014px%20arial%2Cserif%22%3E0%20fps%3C%2Fspan%3E%0A%20%20%20%20%20%20%20%20%20%20%3Ca%20class%3D%22shadertoyLink%22%20href%3D%22https%3A%2F%2Fwww%2Eshadertoy%2Ecom%22%20target%3D%22%5Fblank%22%3EShadertoy%3C%2Fa%3E%0A%20%20%20%20%20%20%20%20%20%20%3Cdiv%20id%3D%22myFullScreen%22%20%20class%3D%22uiButton%22%20title%3D%22go%20full%20screen%21%22%20style%3D%22right%3A80px%3Btop%3A4px%3BcssFloat%3Aleft%3Bbackground%3Aurl%28%27%2Fimg%2FfullscreenEmbed%2Epng%27%29%3B%22%3E%3C%2Fdiv%3E%0A%20%20%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%0A%3Cscript%3E%0A%20%20%20%20%28function%28i%2Cs%2Co%2Cg%2Cr%2Ca%2Cm%29%7Bi%5B%27GoogleAnalyticsObject%27%5D%3Dr%3Bi%5Br%5D%3Di%5Br%5D%7C%7Cfunction%28%29%7B%0A%20%20%20%20%28i%5Br%5D%2Eq%3Di%5Br%5D%2Eq%7C%7C%5B%5D%29%2Epush%28arguments%29%7D%2Ci%5Br%5D%2El%3D1%2Anew%20Date%28%29%3Ba%3Ds%2EcreateElement%28o%29%2C%0A%20%20%20%20m%3Ds%2EgetElementsByTagName%28o%29%5B0%5D%3Ba%2Easync%3D1%3Ba%2Esrc%3Dg%3Bm%2EparentNode%2EinsertBefore%28a%2Cm%29%0A%20%20%20%20%7D%29%28window%2Cdocument%2C%27script%27%2C%27%2F%2Fwww%2Egoogle%2Danalytics%2Ecom%2Fanalytics%2Ejs%27%2C%27ga%27%29%3B%0A%0A%20%20%20%20ga%28%27create%27%2C%20%27UA%2D44068895%2D1%27%2C%20%27shadertoy%2Ecom%27%29%3B%0A%20%20%20%20ga%28%27send%27%2C%20%27pageview%27%29%3B%0A%3C%2Fscript%3E%0A%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A" allowfullscreen>
+</iframe>
+<hr />
+
+<p style="text-align: right;" class="date ">Posted: <time datetime="2025-03-11">2025-03-11</time></p>
+
+</main>
+
+<footer>
+<p class="signoff">
+  <a href="/">Home</a>
+</p>
+</footer>
+
+<script>
+;(function() {
+  // Non-essential if user has JavaScript off. Just makes checkboxes look nicer.
+  var selector = '.task-list > li > input[type="checkbox"]';
+  var checkboxes = document.querySelectorAll(selector);
+  Array.from(checkboxes).forEach((checkbox) => {
+    var wasChecked = checkbox.checked;
+    checkbox.disabled = false;
+    checkbox.addEventListener('click', (ev) => {ev.target.checked = wasChecked});
+  });
+})();
+</script>
+</body>
+</html>
